@@ -153,5 +153,16 @@
   .shadow-glow-cyan {
     box-shadow: 0 0 40px -10px var(--cyan);
   }
+  
+  /* Hide scrollbar utilities */
+  .scrollbar-hide {
+    /* Hide scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* WebKit browsers */
+  }
 }
 /* End custom utilities */
