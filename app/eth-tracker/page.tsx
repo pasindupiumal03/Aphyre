@@ -203,54 +203,52 @@ export default function ETHTracker() {
           ) : data?.trendingTokens && data.trendingTokens.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               {data.trendingTokens.slice(0, 20).map((token, index) => (
-                <Link key={token.token_address || index} href={`/eth-tracker/${token.token_address}`}>
-                  <Card className="group cursor-pointer transition-all border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="mb-4 h-20 w-20 rounded-full bg-linear-to-br from-accent/20 to-cyan/20 flex items-center justify-center text-4xl border-2 border-accent/30">
-                        {token.logo ? (
-                          <img 
-                            src={token.logo} 
-                            alt={token.name} 
-                            className="w-12 h-12 rounded-full"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none'
-                              const parent = (e.target as HTMLImageElement).parentElement
-                              if (parent) {
-                                parent.innerHTML = token.symbol?.charAt(0) || '?'
-                              }
-                            }}
-                          />
-                        ) : (
-                          <span className="text-xl font-bold text-accent">
-                            {token.symbol?.charAt(0) || '?'}
-                          </span>
-                        )}
-                      </div>
-                      <h4 className="text-lg font-black mb-1 group-hover:text-accent transition-colors line-clamp-2 h-14 flex items-center">
-                        {token.name || 'Unknown Token'}
-                      </h4>
-                      <Badge variant="secondary" className="mb-4 font-bold">
-                        {token.symbol || 'N/A'}
-                      </Badge>
-                      <p className="text-2xl font-black text-accent mb-2">
-                        {token.usdPrice ? `${Number(token.usdPrice).toFixed(6)}` : 'N/A'}
-                      </p>
-                      <p className={`text-sm font-bold mb-3 ${
-                        token.pricePercentChange['24h'] && token.pricePercentChange['24h'] > 0 
-                          ? 'text-green-500' 
-                          : 'text-destructive'
-                      }`}>
-                        {token.pricePercentChange['24h'] 
-                          ? `$${token.pricePercentChange['24h'] > 0 ? '+' : ''}${token.pricePercentChange['24h'].toFixed(2)}%`
-                          : 'N/A'
-                        }
-                      </p>
-                      <p className="text-xs text-muted-foreground font-medium">
-                        Volume: ${token.totalVolume['24h'] ? `${token.totalVolume['24h'].toLocaleString()}` : 'N/A'}
-                      </p>
+                <Card key={token.token_address || index} className="p-6 bg-card border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-4 h-20 w-20 rounded-full bg-linear-to-br from-accent/20 to-cyan/20 flex items-center justify-center text-4xl border-2 border-accent/30">
+                      {token.logo ? (
+                        <img 
+                          src={token.logo} 
+                          alt={token.name} 
+                          className="w-12 h-12 rounded-full"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none'
+                            const parent = (e.target as HTMLImageElement).parentElement
+                            if (parent) {
+                              parent.innerHTML = token.symbol?.charAt(0) || '?'
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span className="text-xl font-bold text-accent">
+                          {token.symbol?.charAt(0) || '?'}
+                        </span>
+                      )}
                     </div>
-                  </Card>
-                </Link>
+                    <h4 className="text-lg font-black mb-1 line-clamp-2 h-14 flex items-center">
+                      {token.name || 'Unknown Token'}
+                    </h4>
+                    <Badge variant="secondary" className="mb-4 font-bold">
+                      {token.symbol || 'N/A'}
+                    </Badge>
+                    <p className="text-2xl font-black text-accent mb-2">
+                      ${token.usdPrice ? `${Number(token.usdPrice).toFixed(6)}` : 'N/A'}
+                    </p>
+                    <p className={`text-sm font-bold mb-3 ${
+                      token.pricePercentChange['24h'] && token.pricePercentChange['24h'] > 0 
+                        ? 'text-green-500' 
+                        : 'text-destructive'
+                    }`}>
+                      {token.pricePercentChange['24h'] 
+                        ? `$${token.pricePercentChange['24h'] > 0 ? '+' : ''}${token.pricePercentChange['24h'].toFixed(2)}%`
+                        : 'N/A'
+                      }
+                    </p>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Volume: ${token.totalVolume['24h'] ? `${token.totalVolume['24h'].toLocaleString()}` : 'N/A'}
+                    </p>
+                  </div>
+                </Card>
               ))}
             </div>
           ) : (
