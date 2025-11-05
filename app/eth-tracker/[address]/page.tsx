@@ -27,18 +27,8 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react"
-import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip, Bar, BarChart } from "recharts"
+import { ResponsiveContainer, Bar, BarChart, XAxis, YAxis, Tooltip } from "recharts"
 import { useTokenDetails } from "@/hooks/use-token-details"
-
-const priceHistoryData = [
-  { time: "00:00", price: 0.72 },
-  { time: "04:00", price: 0.71 },
-  { time: "08:00", price: 0.73 },
-  { time: "12:00", price: 0.75 },
-  { time: "16:00", price: 0.74 },
-  { time: "20:00", price: 0.76 },
-  { time: "24:00", price: 0.775628 },
-]
 
 const holderDistributionData = [
   { range: "Top 10", percentage: 38, holders: 10 },
@@ -67,6 +57,29 @@ const acquisitionData = [
 export default function TokenDetailPage({ params }: { params: Promise<{ address: string }> }) {
   const { address } = use(params)
   const { tokenData, isLoading, error } = useTokenDetails(address)
+
+  // Function to copy token address to clipboard
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      // You could add a toast notification here if you have a toast system
+      console.log('Address copied to clipboard:', text)
+    } catch (err) {
+      console.error('Failed to copy address:', err)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+    }
+  }
+
+  // Function to open Etherscan in new tab
+  const openEtherscan = (tokenAddress: string) => {
+    window.open(`https://etherscan.io/address/${tokenAddress}`, '_blank')
+  }
 
   if (isLoading) {
     return (
@@ -259,11 +272,21 @@ export default function TokenDetailPage({ params }: { params: Promise<{ address:
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-4">
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => copyToClipboard(address)}
+                >
                   <Copy className="h-4 w-4" />
                   Copy Address
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => openEtherscan(address)}
+                >
                   <ExternalLink className="h-4 w-4" />
                   View on Etherscan
                 </Button>
@@ -366,9 +389,23 @@ export default function TokenDetailPage({ params }: { params: Promise<{ address:
           {/* 24h Change */}
           <Card className="col-span-3 p-8 border-border hover:border-accent/50 transition-all bg-card">
             <div className="mb-4">
-              <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">24h Change</p>
-              <h3 className="text-5xl font-black tracking-tighter text-green-500">+421</h3>
-              <p className="text-sm font-medium text-muted-foreground mt-1">holders (+0.097%)</p>
+              <div className="flex items-center gap-2 mb-3">
+                {typeof tokenData.change24h === 'number' && tokenData.change24h > 0 ? (
+                  <TrendingUp className="h-8 w-8 text-green-400" />
+                ) : (
+                  <TrendingDown className="h-8 w-8 text-red-400" />
+                )}
+                <span className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground" style={{fontFamily:'Poppins,sans-serif'}}>24h Change</span>
+              </div>
+              <p className={`text-5xl font-black tracking-tighter ${
+                typeof tokenData.change24h === 'number' && tokenData.change24h > 0
+                  ? 'text-green-400'
+                  : 'text-red-400'
+              }`} style={{fontFamily:'Poppins,sans-serif'}}>
+                {typeof tokenData.change24h === 'number'
+                  ? `${tokenData.change24h > 0 ? '+' : ''}${tokenData.change24h.toFixed(2)}%`
+                  : 'N/A'}
+              </p>
             </div>
           </Card>
 
@@ -377,47 +414,139 @@ export default function TokenDetailPage({ params }: { params: Promise<{ address:
             <div className="mb-6 flex items-start justify-between">
               <div>
                 <h4 className="text-2xl font-black tracking-tight mb-2">AI Risk Analysis</h4>
-                <p className="text-sm text-muted-foreground font-medium">Automated security assessment</p>
+                <p className="text-sm text-muted-foreground font-medium">Real-time security assessment</p>
               </div>
-              <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 px-4 py-2 text-lg font-black">
-                63/100
+              <Badge className={`px-4 py-2 text-lg font-black ${
+                tokenData.riskAnalysis?.overallScore 
+                  ? tokenData.riskAnalysis.overallScore >= 70 
+                    ? 'bg-green-500/20 text-green-500 border-green-500/30'
+                    : tokenData.riskAnalysis.overallScore >= 40
+                    ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
+                    : 'bg-red-500/20 text-red-500 border-red-500/30'
+                  : 'bg-gray-500/20 text-gray-500 border-gray-500/30'
+              }`}>
+                {tokenData.riskAnalysis?.overallScore || 'N/A'}/100
               </Badge>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold">Rug Pull Risk</span>
-                  <span className="text-sm font-black text-yellow-500">39%</span>
+                  <span className={`text-sm font-black ${
+                    tokenData.riskAnalysis?.rugPullRisk 
+                      ? tokenData.riskAnalysis.rugPullRisk <= 30 
+                        ? 'text-green-500'
+                        : tokenData.riskAnalysis.rugPullRisk <= 60
+                        ? 'text-yellow-500'
+                        : 'text-red-500'
+                      : 'text-gray-500'
+                  }`}>
+                    {tokenData.riskAnalysis?.rugPullRisk || 'N/A'}%
+                  </span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-muted/30 overflow-hidden">
-                  <div className="h-full w-[39%] bg-yellow-500 rounded-full shadow-[0_0_15px_-3px_rgba(234,179,8,0.6)]" />
+                  <div 
+                    className={`h-full rounded-full ${
+                      tokenData.riskAnalysis?.rugPullRisk 
+                        ? tokenData.riskAnalysis.rugPullRisk <= 30 
+                          ? 'bg-green-500 shadow-[0_0_15px_-3px_rgba(34,197,94,0.6)]'
+                          : tokenData.riskAnalysis.rugPullRisk <= 60
+                          ? 'bg-yellow-500 shadow-[0_0_15px_-3px_rgba(234,179,8,0.6)]'
+                          : 'bg-red-500 shadow-[0_0_15px_-3px_rgba(239,68,68,0.6)]'
+                        : 'bg-gray-500'
+                    }`}
+                    style={{ width: `${tokenData.riskAnalysis?.rugPullRisk || 0}%` }}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold">Token Health</span>
-                  <span className="text-sm font-black text-green-500">81%</span>
+                  <span className={`text-sm font-black ${
+                    tokenData.riskAnalysis?.tokenHealth 
+                      ? tokenData.riskAnalysis.tokenHealth >= 70 
+                        ? 'text-green-500'
+                        : tokenData.riskAnalysis.tokenHealth >= 40
+                        ? 'text-yellow-500'
+                        : 'text-red-500'
+                      : 'text-gray-500'
+                  }`}>
+                    {tokenData.riskAnalysis?.tokenHealth || 'N/A'}%
+                  </span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-muted/30 overflow-hidden">
-                  <div className="h-full w-[81%] bg-green-500 rounded-full shadow-[0_0_15px_-3px_rgba(34,197,94,0.6)]" />
+                  <div 
+                    className={`h-full rounded-full ${
+                      tokenData.riskAnalysis?.tokenHealth 
+                        ? tokenData.riskAnalysis.tokenHealth >= 70 
+                          ? 'bg-green-500 shadow-[0_0_15px_-3px_rgba(34,197,94,0.6)]'
+                          : tokenData.riskAnalysis.tokenHealth >= 40
+                          ? 'bg-yellow-500 shadow-[0_0_15px_-3px_rgba(234,179,8,0.6)]'
+                          : 'bg-red-500 shadow-[0_0_15px_-3px_rgba(239,68,68,0.6)]'
+                        : 'bg-gray-500'
+                    }`}
+                    style={{ width: `${tokenData.riskAnalysis?.tokenHealth || 0}%` }}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold">Community Trust</span>
-                  <span className="text-sm font-black text-yellow-500">55%</span>
+                  <span className={`text-sm font-black ${
+                    tokenData.riskAnalysis?.communityTrust 
+                      ? tokenData.riskAnalysis.communityTrust >= 70 
+                        ? 'text-green-500'
+                        : tokenData.riskAnalysis.communityTrust >= 40
+                        ? 'text-yellow-500'
+                        : 'text-red-500'
+                      : 'text-gray-500'
+                  }`}>
+                    {tokenData.riskAnalysis?.communityTrust || 'N/A'}%
+                  </span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-muted/30 overflow-hidden">
-                  <div className="h-full w-[55%] bg-yellow-500 rounded-full shadow-[0_0_15px_-3px_rgba(234,179,8,0.6)]" />
+                  <div 
+                    className={`h-full rounded-full ${
+                      tokenData.riskAnalysis?.communityTrust 
+                        ? tokenData.riskAnalysis.communityTrust >= 70 
+                          ? 'bg-green-500 shadow-[0_0_15px_-3px_rgba(34,197,94,0.6)]'
+                          : tokenData.riskAnalysis.communityTrust >= 40
+                          ? 'bg-yellow-500 shadow-[0_0_15px_-3px_rgba(234,179,8,0.6)]'
+                          : 'bg-red-500 shadow-[0_0_15px_-3px_rgba(239,68,68,0.6)]'
+                        : 'bg-gray-500'
+                    }`}
+                    style={{ width: `${tokenData.riskAnalysis?.communityTrust || 0}%` }}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold">Liquidity Score</span>
-                  <span className="text-sm font-black text-red-500">35%</span>
+                  <span className={`text-sm font-black ${
+                    tokenData.riskAnalysis?.liquidityScore 
+                      ? tokenData.riskAnalysis.liquidityScore >= 70 
+                        ? 'text-green-500'
+                        : tokenData.riskAnalysis.liquidityScore >= 40
+                        ? 'text-yellow-500'
+                        : 'text-red-500'
+                      : 'text-gray-500'
+                  }`}>
+                    {tokenData.riskAnalysis?.liquidityScore || 'N/A'}%
+                  </span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-muted/30 overflow-hidden">
-                  <div className="h-full w-[35%] bg-red-500 rounded-full shadow-[0_0_15px_-3px_rgba(239,68,68,0.6)]" />
+                  <div 
+                    className={`h-full rounded-full ${
+                      tokenData.riskAnalysis?.liquidityScore 
+                        ? tokenData.riskAnalysis.liquidityScore >= 70 
+                          ? 'bg-green-500 shadow-[0_0_15px_-3px_rgba(34,197,94,0.6)]'
+                          : tokenData.riskAnalysis.liquidityScore >= 40
+                          ? 'bg-yellow-500 shadow-[0_0_15px_-3px_rgba(234,179,8,0.6)]'
+                          : 'bg-red-500 shadow-[0_0_15px_-3px_rgba(239,68,68,0.6)]'
+                        : 'bg-gray-500'
+                    }`}
+                    style={{ width: `${tokenData.riskAnalysis?.liquidityScore || 0}%` }}
+                  />
                 </div>
               </div>
             </div>
@@ -426,33 +555,30 @@ export default function TokenDetailPage({ params }: { params: Promise<{ address:
 
         {/* Price Chart */}
         <Card className="mb-12 border border-accent/30 bg-gradient-to-br from-card to-accent/5 p-8 shadow-[0_0_40px_-12px_rgba(216,105,142,0.2)]">
-          <div className="mb-6">
-            <h4 className="text-2xl font-black tracking-tight mb-2">Price History (24h)</h4>
-            <p className="text-sm text-muted-foreground font-medium">Real-time price movements</p>
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <h4 className="text-2xl font-black tracking-tight mb-2">Live Price Chart</h4>
+              <p className="text-sm text-muted-foreground font-medium">Real-time trading data from DexScreener</p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => window.open(`https://dexscreener.com/ethereum/${address}`, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4" />
+              View on DexScreener
+            </Button>
           </div>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={priceHistoryData}>
-                <defs>
-                  <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "12px",
-                    fontWeight: 600,
-                  }}
-                  formatter={(value: number) => `$${value.toFixed(6)}`}
-                />
-                <Area type="monotone" dataKey="price" stroke="#10b981" strokeWidth={3} fill="url(#priceGradient)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-96 w-full rounded-xl overflow-hidden border border-border/50">
+            <iframe
+              src={`https://dexscreener.com/ethereum/${address}?embed=1&theme=dark&trades=0&info=0`}
+              width="100%"
+              height="100%"
+              style={{ border: 'none' }}
+              title={`${tokenData.symbol || 'Token'} Price Chart`}
+              allowFullScreen
+            />
           </div>
         </Card>
 

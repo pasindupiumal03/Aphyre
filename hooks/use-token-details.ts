@@ -10,6 +10,14 @@ interface TokenDetails {
   marketCap: number | null
   volume24h: number | null
   holders: number | null
+  liquidity: number | null
+  riskAnalysis: {
+    rugPullRisk: number
+    tokenHealth: number
+    communityTrust: number
+    liquidityScore: number
+    overallScore: number
+  } | null
 }
 
 export const useTokenDetails = (address: string) => {
