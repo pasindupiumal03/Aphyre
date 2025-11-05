@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { use } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,8 +24,11 @@ import {
   Sparkles,
   Crown,
   UsersIcon,
+  Loader2,
+  AlertCircle,
 } from "lucide-react"
 import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip, Bar, BarChart } from "recharts"
+import { useTokenDetails } from "@/hooks/use-token-details"
 
 const priceHistoryData = [
   { time: "00:00", price: 0.72 },
@@ -60,13 +64,40 @@ const acquisitionData = [
   { method: "Airdrop", count: 16401, color: "#10b981" },
 ]
 
-export default function TokenDetailPage({ params }: { params: { address: string } }) {
-  const { address } = params
+export default function TokenDetailPage({ params }: { params: Promise<{ address: string }> }) {
+  const { address } = use(params)
+  const { tokenData, isLoading, error } = useTokenDetails(address)
 
-  const isSPX = address === "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C"
-  const tokenName = isSPX ? "SPX6900" : "Token"
-  const tokenSymbol = isSPX ? "SPX" : "TOKEN"
-  const tokenLogo = isSPX ? "🎯" : "🪙"
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-accent mx-auto mb-4" />
+          <p className="text-lg font-bold text-muted-foreground">Loading token details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !tokenData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="p-8 border-destructive/30 bg-destructive/5 max-w-md">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-destructive mb-2">Error Loading Token</h2>
+            <p className="text-muted-foreground mb-4">{error || 'Failed to load token details'}</p>
+            <Link href="/eth-tracker">
+              <Button variant="outline" className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to ETH Tracker
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -200,65 +231,41 @@ export default function TokenDetailPage({ params }: { params: { address: string 
           <div className="flex items-start justify-between mb-6">
             <div>
               <div className="flex items-center gap-4 mb-3">
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-accent to-cyan flex items-center justify-center text-3xl">
-                  {tokenLogo}
+                <div className="h-16 w-16 rounded-2xl bg-linear-to-br from-accent to-cyan flex items-center justify-center text-3xl">
+                  {tokenData.logo ? (
+                    <img 
+                      src={tokenData.logo} 
+                      alt={tokenData.name || 'Token'} 
+                      className="w-12 h-12 rounded-xl"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none'
+                        const parent = (e.target as HTMLImageElement).parentElement
+                        if (parent) {
+                          parent.innerHTML = tokenData.symbol?.charAt(0) || '?'
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span className="text-xl font-bold text-white">
+                      {tokenData.symbol?.charAt(0) || '?'}
+                    </span>
+                  )}
                 </div>
                 <div>
-                  <h2 className="text-5xl font-black tracking-tighter">{tokenName}</h2>
+                  <h2 className="text-5xl font-black tracking-tighter">{tokenData.name || 'Unknown Token'}</h2>
                   <Badge variant="secondary" className="mt-2 font-bold text-base">
-                    {tokenSymbol}
+                    {tokenData.symbol || 'N/A'}
                   </Badge>
                 </div>
               </div>
-
-              {/* Enhanced Token Info Display */}
-              <div className="grid grid-cols-4 gap-4 mt-8 mb-6">
-                <div className="bg-accent/10 border border-accent/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Current Price</p>
-                  <p className="text-xl font-black text-accent">${isSPX ? "0.776" : "0.0000142"}</p>
-                </div>
-                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">24h Change</p>
-                  <p className="text-xl font-black text-green-500">{isSPX ? "-0.15%" : "-2.35%"}</p>
-                </div>
-                <div className="bg-cyan/10 border border-cyan/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Market Cap</p>
-                  <p className="text-xl font-black text-cyan">${isSPX ? "775.6M" : "5.98B"}</p>
-                </div>
-                <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">24h Volume</p>
-                  <p className="text-xl font-black text-purple-500">${isSPX ? "2.43M" : "1.24B"}</p>
-                </div>
-              </div>
-
-              {/* Additional Info Row */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Total Holders</p>
-                  <p className="text-lg font-black text-blue-500">434,244</p>
-                </div>
-                <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Holder Change (24h)</p>
-                  <p className="text-lg font-black text-orange-500">+421</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 mt-4">
-                <code className="text-sm font-mono text-muted-foreground bg-muted/30 px-3 py-1 rounded-lg">
-                  {address}
-                </code>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={() => navigator.clipboard.writeText(address)}
-                >
+              <div className="flex items-center gap-2 mt-4">
+                <Button variant="outline" size="sm" className="gap-2">
                   <Copy className="h-4 w-4" />
+                  Copy Address
                 </Button>
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>
-                  <a href={`https://etherscan.io/address/${address}`} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  View on Etherscan
                 </Button>
               </div>
             </div>
@@ -275,7 +282,7 @@ export default function TokenDetailPage({ params }: { params: { address: string 
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-12 gap-6 mb-12">
           {/* Current Price - Large Featured */}
-          <Card className="col-span-4 border border-accent/30 bg-gradient-to-br from-card via-card to-accent/5 p-8 shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)] relative overflow-hidden">
+          <Card className="col-span-4 border border-accent/30 bg-linear-to-br from-card via-card to-accent/5 p-8 shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-48 h-48 bg-accent/10 rounded-full blur-3xl" />
             <div className="relative">
               <div className="mb-4 flex items-start justify-between">
@@ -283,11 +290,20 @@ export default function TokenDetailPage({ params }: { params: { address: string 
                   <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">
                     Current Price
                   </p>
-                  <h3 className="text-5xl font-black tracking-tighter">${isSPX ? "0.775628" : "0.0000142"}</h3>
+                  <h3 className="text-5xl font-black tracking-tighter">
+                    ${tokenData.price ? tokenData.price.toFixed(6) : 'N/A'}
+                  </h3>
                   <div className="flex items-center gap-2 mt-3">
-                    <Badge variant="destructive" className="gap-1 px-3 py-1 text-sm font-bold">
-                      <TrendingDown className="h-4 w-4" />
-                      {isSPX ? "-0.15%" : "-2.35%"}
+                    <Badge 
+                      variant={tokenData.change24h && tokenData.change24h > 0 ? "default" : "destructive"} 
+                      className="gap-1 px-3 py-1 text-sm font-bold"
+                    >
+                      {tokenData.change24h && tokenData.change24h > 0 ? (
+                        <TrendingUp className="h-4 w-4" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4" />
+                      )}
+                      {tokenData.change24h ? `${tokenData.change24h > 0 ? '+' : ''}${tokenData.change24h.toFixed(2)}%` : 'N/A'}
                     </Badge>
                     <span className="text-xs font-medium text-muted-foreground">24h</span>
                   </div>
@@ -300,12 +316,14 @@ export default function TokenDetailPage({ params }: { params: { address: string 
           </Card>
 
           {/* Market Cap */}
-          <Card className="col-span-4 border border-cyan/30 bg-gradient-to-br from-card to-cyan/5 p-8 shadow-[0_0_50px_-12px_rgba(192,252,248,0.3)]">
+          <Card className="col-span-4 border border-cyan/30 bg-linear-to-br from-card to-cyan/5 p-8 shadow-[0_0_50px_-12px_rgba(192,252,248,0.3)]">
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">Market Cap</p>
-                <h3 className="text-5xl font-black tracking-tighter">${isSPX ? "775.6M" : "5.98B"}</h3>
-                <p className="text-sm font-medium text-muted-foreground mt-2">Rank #{isSPX ? "156" : "24"}</p>
+                <h3 className="text-5xl font-black tracking-tighter">
+                  {tokenData.marketCap ? `$${(tokenData.marketCap / 1e6).toFixed(1)}M` : 'N/A'}
+                </h3>
+                <p className="text-sm font-medium text-muted-foreground mt-2">Live data</p>
               </div>
               <div className="rounded-2xl bg-cyan/20 p-4">
                 <BarChart3 className="h-7 w-7 text-cyan" />
@@ -318,10 +336,12 @@ export default function TokenDetailPage({ params }: { params: { address: string 
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">Volume (24h)</p>
-                <h3 className="text-5xl font-black tracking-tighter">${isSPX ? "2.43M" : "1.24B"}</h3>
+                <h3 className="text-5xl font-black tracking-tighter">
+                  {tokenData.volume24h ? `$${(tokenData.volume24h / 1e6).toFixed(1)}M` : 'N/A'}
+                </h3>
                 <div className="flex items-center gap-2 mt-2 text-sm font-bold">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <span className="text-green-500">+{isSPX ? "8.2" : "24.8"}%</span>
+                  <Activity className="h-4 w-4 text-accent" />
+                  <span className="text-accent">Live</span>
                 </div>
               </div>
               <div className="rounded-xl bg-muted/30 p-3 border border-accent/30">
@@ -334,7 +354,9 @@ export default function TokenDetailPage({ params }: { params: { address: string 
           <Card className="col-span-3 p-8 border-border hover:border-cyan/50 transition-all bg-card">
             <div className="mb-4">
               <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">Total Holders</p>
-              <h3 className="text-5xl font-black tracking-tighter">434,244</h3>
+              <h3 className="text-5xl font-black tracking-tighter">
+                {tokenData.holders ? tokenData.holders.toLocaleString() : 'N/A'}
+              </h3>
             </div>
             <div className="rounded-xl bg-cyan/20 p-3 w-fit border border-cyan/30">
               <Users className="h-6 w-6 text-cyan" />

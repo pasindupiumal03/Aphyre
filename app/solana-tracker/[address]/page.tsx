@@ -205,57 +205,6 @@ export default function SolanaTokenDetailPage({ params }: { params: { address: s
                   </Badge>
                 </div>
               </div>
-
-              {/* Enhanced Token Info Display */}
-              <div className="grid grid-cols-4 gap-4 mt-8 mb-6">
-                <div className="bg-[#14f195]/10 border border-[#14f195]/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Current Price</p>
-                  <p className="text-xl font-black text-[#14f195]">$0.00289</p>
-                </div>
-                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">24h Change</p>
-                  <p className="text-xl font-black text-green-500">+18.03%</p>
-                </div>
-                <div className="bg-[#9945ff]/10 border border-[#9945ff]/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Market Cap</p>
-                  <p className="text-xl font-black text-[#9945ff]">$2.89B</p>
-                </div>
-                <div className="bg-[#00d4ff]/10 border border-[#00d4ff]/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">24h Volume</p>
-                  <p className="text-xl font-black text-[#00d4ff]">$456M</p>
-                </div>
-              </div>
-
-              {/* Additional Info Row */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-[#9945ff]/10 border border-[#9945ff]/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Total Holders</p>
-                  <p className="text-lg font-black text-[#9945ff]">182,582</p>
-                </div>
-                <div className="bg-[#14f195]/10 border border-[#14f195]/20 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Holder Change (24h)</p>
-                  <p className="text-lg font-black text-[#14f195]">+1,245</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 mt-4">
-                <code className="text-sm font-mono text-muted-foreground bg-muted/30 px-3 py-1 rounded-lg">
-                  {address}
-                </code>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={() => navigator.clipboard.writeText(address)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>
-                  <a href={`https://pump.fun/${address}`} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
-              </div>
             </div>
             <div className="flex gap-3">
               <Badge className="bg-green-500/20 text-green-500 border-green-500/30 px-4 py-2 text-sm font-bold">
