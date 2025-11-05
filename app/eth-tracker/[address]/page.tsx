@@ -29,24 +29,7 @@ import {
 } from "lucide-react"
 import { ResponsiveContainer, Bar, BarChart, XAxis, YAxis, Tooltip } from "recharts"
 import { useTokenDetails } from "@/hooks/use-token-details"
-
-const holderDistributionData = [
-  { range: "Top 10", percentage: 38, holders: 10 },
-  { range: "Top 25", percentage: 53, holders: 25 },
-  { range: "Top 50", percentage: 64, holders: 50 },
-  { range: "Top 100", percentage: 72, holders: 100 },
-  { range: "Top 250", percentage: 84, holders: 250 },
-  { range: "Top 500", percentage: 91, holders: 500 },
-]
-
-const topHolders = [
-  { address: "Binance 8", balance: "69,000,000,000,000", usdValue: "$839,012,712.424", percentage: 16.4 },
-  { address: "0x73af3b...54d935", balance: "16,656,419,987,900.578", usdValue: "$202,535,479.903", percentage: 3.96 },
-  { address: "0x611f7b...dfb09d", balance: "14,057,560,895,267.36", usdValue: "$170,934,381.113", percentage: 3.34 },
-  { address: "0x3f9a83...5699b8", balance: "12,291,725,480,921.756", usdValue: "$149,462,520.813", percentage: 2.92 },
-  { address: "0xc93e48...0413b4", balance: "12,000,000,000,100", usdValue: "$145,915,254.336", percentage: 2.85 },
-  { address: "Binance 28", balance: "10,513,613,563,978.818", usdValue: "$127,841,383.097", percentage: 2.5 },
-]
+import { useTokenAnalytics } from "@/hooks/use-token-analytics"
 
 const acquisitionData = [
   { method: "Swap", count: 123736, color: "#8b5cf6" },
@@ -57,6 +40,7 @@ const acquisitionData = [
 export default function TokenDetailPage({ params }: { params: Promise<{ address: string }> }) {
   const { address } = use(params)
   const { tokenData, isLoading, error } = useTokenDetails(address)
+  const { analytics, isLoading: analyticsLoading, error: analyticsError } = useTokenAnalytics(address)
 
   // Function to copy token address to clipboard
   const copyToClipboard = async (text: string) => {
@@ -570,7 +554,7 @@ export default function TokenDetailPage({ params }: { params: Promise<{ address:
               View on DexScreener
             </Button>
           </div>
-          <div className="h-96 w-full rounded-xl overflow-hidden border border-border/50">
+          <div className="h-[600px] w-full rounded-xl overflow-hidden border border-border/50">
             <iframe
               src={`https://dexscreener.com/ethereum/${address}?embed=1&theme=dark&trades=0&info=0`}
               width="100%"
@@ -588,68 +572,107 @@ export default function TokenDetailPage({ params }: { params: Promise<{ address:
           <Card className="col-span-7 border border-cyan/30 bg-gradient-to-br from-card to-cyan/5 p-8 shadow-[0_0_40px_-12px_rgba(192,252,248,0.2)]">
             <div className="mb-6">
               <h4 className="text-2xl font-black tracking-tight mb-2">Token Distribution Analytics</h4>
-              <p className="text-sm text-muted-foreground font-medium">Holder concentration analysis</p>
+              <p className="text-sm text-muted-foreground font-medium">
+                {analytics?.isEstimated ? 'Estimated holder concentration analysis' : 'Real-time holder concentration analysis'}
+              </p>
+              {analytics?.isEstimated && (
+                <p className="text-xs text-amber-500 mt-1 font-medium">
+                  📊 Using smart estimation based on market data (Free tier limitations)
+                </p>
+              )}
             </div>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={holderDistributionData}>
-                  <XAxis dataKey="range" stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "12px",
-                      fontWeight: 600,
-                    }}
-                    formatter={(value: number) => `${value}%`}
-                  />
-                  <Bar dataKey="percentage" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
-                  <defs>
-                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8b5cf6" />
-                      <stop offset="100%" stopColor="#3b82f6" />
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {analyticsLoading ? (
+              <div className="h-80 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-accent" />
+              </div>
+            ) : analyticsError || !analytics?.holderDistribution ? (
+              <div className="h-80 flex items-center justify-center">
+                <p className="text-muted-foreground">Unable to load distribution data</p>
+              </div>
+            ) : (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.holderDistribution}>
+                    <XAxis dataKey="range" stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "12px",
+                        fontWeight: 600,
+                      }}
+                      formatter={(value: number) => `${value}%`}
+                    />
+                    <Bar dataKey="percentage" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
+                    <defs>
+                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8b5cf6" />
+                        <stop offset="100%" stopColor="#3b82f6" />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </Card>
 
           {/* Acquisition Breakdown */}
           <Card className="col-span-5 border border-accent/30 bg-card p-8">
             <div className="mb-6">
               <h4 className="text-2xl font-black tracking-tight mb-2">Acquisition Breakdown</h4>
-              <p className="text-sm text-muted-foreground font-medium">How holders acquired tokens</p>
+              <p className="text-sm text-muted-foreground font-medium">
+                {analytics?.isEstimated ? 'Estimated transaction analysis' : 'Real-time transaction analysis'}
+              </p>
+              {analytics?.isEstimated && (
+                <p className="text-xs text-amber-500 mt-1 font-medium">
+                  🔍 Smart estimates based on volume and holder patterns
+                </p>
+              )}
             </div>
-            <div className="space-y-6">
-              {acquisitionData.map((item, index) => (
-                <div key={index} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-10 w-10 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: `${item.color}20`, border: `2px solid ${item.color}` }}
-                      >
-                        <div className="h-4 w-4 rounded-full" style={{ backgroundColor: item.color }} />
+            {analyticsLoading ? (
+              <div className="h-64 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-accent" />
+              </div>
+            ) : analyticsError || !analytics?.acquisitionBreakdown ? (
+              <div className="h-64 flex items-center justify-center">
+                <p className="text-muted-foreground">Unable to load acquisition data</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {analytics.acquisitionBreakdown.map((item, index) => {
+                  const totalTransactions = analytics.acquisitionBreakdown.reduce((sum, i) => sum + i.count, 0);
+                  const percentage = totalTransactions > 0 ? (item.count / totalTransactions) * 100 : 0;
+                  
+                  return (
+                    <div key={index} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="h-10 w-10 rounded-xl flex items-center justify-center"
+                            style={{ backgroundColor: `${item.color}20`, border: `2px solid ${item.color}` }}
+                          >
+                            <div className="h-4 w-4 rounded-full" style={{ backgroundColor: item.color }} />
+                          </div>
+                          <span className="text-lg font-bold">{item.method}</span>
+                        </div>
+                        <span className="text-2xl font-black">{item.count.toLocaleString()}</span>
                       </div>
-                      <span className="text-lg font-bold">{item.method}</span>
+                      <div className="h-3 w-full rounded-full bg-muted/30 overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${percentage}%`,
+                            backgroundColor: item.color,
+                            boxShadow: `0 0 15px -3px ${item.color}`,
+                          }}
+                        />
+                      </div>
                     </div>
-                    <span className="text-2xl font-black">{item.count.toLocaleString()}</span>
-                  </div>
-                  <div className="h-3 w-full rounded-full bg-muted/30 overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${(item.count / 434244) * 100}%`,
-                        backgroundColor: item.color,
-                        boxShadow: `0 0 15px -3px ${item.color}`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </Card>
         </div>
 
@@ -658,61 +681,78 @@ export default function TokenDetailPage({ params }: { params: Promise<{ address:
           <div className="mb-6 flex items-start justify-between">
             <div>
               <h4 className="text-2xl font-black tracking-tight mb-2">Top Token Holders</h4>
-              <p className="text-sm text-muted-foreground font-medium">Largest token holders by balance</p>
+              <p className="text-sm text-muted-foreground font-medium">
+                {analytics?.isEstimated ? 'Estimated largest token holders' : 'Real-time largest token holders'}
+              </p>
+              {analytics?.isEstimated && (
+                <p className="text-xs text-amber-500 mt-1 font-medium">
+                  💡 Representative holder patterns based on market analysis
+                </p>
+              )}
             </div>
             <div className="rounded-xl bg-accent/20 p-3 border border-accent/30">
               <Users className="h-6 w-6 text-accent" />
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-4 px-4 text-sm font-black uppercase tracking-widest text-muted-foreground">
-                    Address
-                  </th>
-                  <th className="text-right py-4 px-4 text-sm font-black uppercase tracking-widest text-muted-foreground">
-                    Balance
-                  </th>
-                  <th className="text-right py-4 px-4 text-sm font-black uppercase tracking-widest text-muted-foreground">
-                    USD Value
-                  </th>
-                  <th className="text-right py-4 px-4 text-sm font-black uppercase tracking-widest text-muted-foreground">
-                    % of Supply
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {topHolders.map((holder, index) => (
-                  <tr key={index} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-accent/20 flex items-center justify-center font-black text-accent border border-accent/30">
-                          {holder.address.charAt(0)}
-                        </div>
-                        <code className="text-sm font-mono font-bold">{holder.address}</code>
-                      </div>
-                    </td>
-                    <td className="text-right py-4 px-4 font-mono text-sm font-bold">{holder.balance}</td>
-                    <td className="text-right py-4 px-4 font-mono text-sm font-bold text-green-500">
-                      {holder.usdValue}
-                    </td>
-                    <td className="text-right py-4 px-4">
-                      <div className="flex items-center justify-end gap-3">
-                        <div className="w-24 h-2 rounded-full bg-muted/30 overflow-hidden">
-                          <div
-                            className="h-full bg-accent rounded-full shadow-[0_0_10px_-2px_rgba(216,105,142,0.6)]"
-                            style={{ width: `${(holder.percentage / 16.4) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-black w-16">{holder.percentage}%</span>
-                      </div>
-                    </td>
+          {analyticsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-accent" />
+            </div>
+          ) : analyticsError || !analytics?.topHolders ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Unable to load holder data</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-4 px-4 text-sm font-black uppercase tracking-widest text-muted-foreground">
+                      Address
+                    </th>
+                    <th className="text-right py-4 px-4 text-sm font-black uppercase tracking-widest text-muted-foreground">
+                      Balance
+                    </th>
+                    <th className="text-right py-4 px-4 text-sm font-black uppercase tracking-widest text-muted-foreground">
+                      USD Value
+                    </th>
+                    <th className="text-right py-4 px-4 text-sm font-black uppercase tracking-widest text-muted-foreground">
+                      % of Supply
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {analytics.topHolders.map((holder, index) => (
+                    <tr key={index} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-accent/20 flex items-center justify-center font-black text-accent border border-accent/30">
+                            {holder.address.charAt(0)}
+                          </div>
+                          <code className="text-sm font-mono font-bold">{holder.address}</code>
+                        </div>
+                      </td>
+                      <td className="text-right py-4 px-4 font-mono text-sm font-bold">{holder.balance}</td>
+                      <td className="text-right py-4 px-4 font-mono text-sm font-bold text-green-500">
+                        {holder.usdValue}
+                      </td>
+                      <td className="text-right py-4 px-4">
+                        <div className="flex items-center justify-end gap-3">
+                          <div className="w-24 h-2 rounded-full bg-muted/30 overflow-hidden">
+                            <div
+                              className="h-full bg-accent rounded-full shadow-[0_0_10px_-2px_rgba(216,105,142,0.6)]"
+                              style={{ width: `${Math.min(100, parseFloat(holder.percentage) * 6)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-black w-16">{holder.percentage}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </main>
     </div>
