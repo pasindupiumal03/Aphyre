@@ -26,7 +26,10 @@ import {
   Crown,
   Users,
 } from "lucide-react"
-import { ResponsiveContainer, Line, LineChart, Area, AreaChart, XAxis, YAxis, Tooltip, Cell, Pie } from "recharts"
+import { ResponsiveContainer, Line, LineChart, Area, AreaChart, XAxis, YAxis, Tooltip, Cell, Pie, PieChart as RechartsPieChart } from "recharts"
+import { useDashboardNews } from "@/hooks/use-dashboard-news"
+import { useMarketSentiment } from "@/hooks/use-market-sentiment"
+import { useMarketStats } from "@/hooks/use-market-stats"
 
 // Mock data
 const marketData = [
@@ -37,35 +40,6 @@ const marketData = [
   { time: "16:00", value: 44100, volume: 2100 },
   { time: "20:00", value: 43800, volume: 1900 },
   { time: "24:00", value: 44500, volume: 2300 },
-]
-
-const newsItems = [
-  {
-    source: "CoinDesk",
-    time: "18 minutes ago",
-    title: "Balancer Hit by Apparent Exploit as $70M in Crypto Moves to New Wallets",
-    excerpt:
-      "The affected funds include 6,850 osETH, 6,590 WETH, and 4,260 wsETH, blockchain data analyzed by CoinDesk showed.",
-    sentiment: "neutral",
-    tags: ["Market"],
-  },
-  {
-    source: "Cointelegraph",
-    time: "25 minutes ago",
-    title: "Without Bitcoin, what happens to Ether and XRP?",
-    excerpt:
-      "What if Bitcoin crashes? Will Ether and XRP fall with it or hold their ground? Discover how a BTC slump could rattle the entire crypto market.",
-    sentiment: "neutral",
-    tags: ["BTC", "Market"],
-  },
-  {
-    source: "CoinDesk",
-    time: "51 minutes ago",
-    title: "BTC's 'Indecision' Problem: Here's What the Market Is Trying to Tell Us",
-    excerpt: "BTC's monthly chart shows indecision at record highs.",
-    sentiment: "bullish",
-    tags: ["BTC", "Market"],
-  },
 ]
 
 const fundingTrendData = [
@@ -372,6 +346,73 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<"crypto" | "us">("crypto")
   const [fundingView, setFundingView] = useState<"amount" | "count">("amount")
   const [categoryView, setcategoryView] = useState<"amount" | "count">("count")
+  
+  // Dashboard news hook
+  const {
+    cryptoNews,
+    usNews,
+    isLoading: newsLoading,
+    error: newsError,
+    getSentimentDisplay,
+    handleNewsClick,
+    refreshNews,
+  } = useDashboardNews();
+
+  // Market sentiment hook
+  const {
+    sentimentData,
+    isLoading: sentimentLoading,
+    error: sentimentError,
+    refreshSentiment,
+  } = useMarketSentiment();
+
+  // Market stats hook (CoinGecko)
+  const { statsData, isLoading: statsLoading, error: statsError, refreshStats } = useMarketStats();
+
+  // Convenience lookups for the four cards
+  const marketCapStat = statsData?.find((s) => s.label === "Market Cap");
+  const volumeStat = statsData?.find((s) => s.label === "24h Volume");
+  const totalCoinsStat = statsData?.find((s) => s.label === "Total Coins");
+  const btcDominanceStat = statsData?.find((s) => s.label === "BTC Dominance");
+
+  // Get source logo URL using Google's favicon service
+  const getSourceLogo = (source: string | { name: string; logo?: string; domain?: string }) => {
+    const domainMap: Record<string, { name: string; domain: string }> = {
+      "cointelegraph": { name: "Cointelegraph", domain: "cointelegraph.com" },
+      "coindesk": { name: "CoinDesk", domain: "coindesk.com" },
+      "theblock": { name: "The Block", domain: "theblock.co" },
+      "decrypt": { name: "Decrypt", domain: "decrypt.co" },
+      "bitcoinmagazine": { name: "Bitcoin Magazine", domain: "bitcoinmagazine.com" },
+      "cnbc": { name: "CNBC", domain: "cnbc.com" },
+      "wsj": { name: "Wall Street Journal", domain: "wsj.com" },
+      "bloomberg": { name: "Bloomberg", domain: "bloomberg.com" },
+      "yahoo": { name: "Yahoo Finance", domain: "finance.yahoo.com" },
+      "marketwatch": { name: "MarketWatch", domain: "marketwatch.com" },
+      "reuters": { name: "Reuters", domain: "reuters.com" },
+      "ft": { name: "Financial Times", domain: "ft.com" },
+      "techcrunch": { name: "TechCrunch", domain: "techcrunch.com" },
+      "venturebeat": { name: "VentureBeat", domain: "venturebeat.com" },
+      "forbes": { name: "Forbes", domain: "forbes.com" },
+      "beincrypto": { name: "BeInCrypto", domain: "beincrypto.com" },
+      "cryptoslate": { name: "CryptoSlate", domain: "cryptoslate.com" },
+      "utoday": { name: "U.Today", domain: "u.today" },
+      "newsbtc": { name: "NewsBTC", domain: "newsbtc.com" },
+    };
+
+    if (typeof source === "string") {
+      const sourceLower = source.toLowerCase().replace(/\s+/g, "").replace(/[^a-z]/g, "");
+      const mapped = domainMap[sourceLower];
+      const domain = mapped?.domain || `${sourceLower}.com`;
+      const safeDomain = domain || "news";
+      return `https://www.google.com/s2/favicons?domain=${safeDomain}&sz=64`;
+    } else {
+      const sourceLower = source.name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z]/g, "");
+      const mapped = domainMap[sourceLower];
+      const domain = source.domain || mapped?.domain || `${sourceLower}.com`;
+      const safeDomain = domain || "news";
+      return source.logo || `https://www.google.com/s2/favicons?domain=${safeDomain}&sz=64`;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -523,11 +564,13 @@ export default function Dashboard() {
                 <div>
                   <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">Market Cap</p>
                   <div className="flex items-baseline gap-3">
-                    <h3 className="text-7xl font-black tracking-tighter">$4T</h3>
-                    <Badge variant="destructive" className="gap-1 px-3 py-1 text-sm font-bold">
-                      <ArrowDownRight className="h-4 w-4" />
-                      3.60%
-                    </Badge>
+                    <h3 className="text-7xl font-black tracking-tighter">
+                      {marketCapStat ? marketCapStat.value : (statsLoading ? "..." : "$4T")}
+                    </h3>
+                      <Badge variant={marketCapStat?.change && marketCapStat.change < 0 ? "destructive" : "default"} className="gap-1 px-3 py-1 text-sm font-bold">
+                        <ArrowDownRight className="h-4 w-4" />
+                        {typeof marketCapStat?.change === 'number' ? `${marketCapStat.change.toFixed(2)}%` : "N/A"}
+                      </Badge>
                   </div>
                 </div>
                 <div className="rounded-2xl bg-accent/20 p-4 shadow-glow-accent">
@@ -558,7 +601,9 @@ export default function Dashboard() {
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">24H Volume</p>
-                  <h3 className="text-6xl font-black tracking-tighter">$134B</h3>
+                  <h3 className="text-6xl font-black tracking-tighter">
+                    {volumeStat ? volumeStat.value : (statsLoading ? "..." : "$134B")}
+                  </h3>
                 </div>
                 <div className="rounded-2xl bg-cyan/20 p-4">
                   <Activity className="h-7 w-7 text-cyan" />
@@ -587,10 +632,10 @@ export default function Dashboard() {
           <Card className="col-span-3 p-8 border-border hover:cyan/50 transition-all bg-card">
             <div className="mb-6">
               <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">BTC Dominance</p>
-              <h3 className="text-5xl font-black tracking-tighter">58.2%</h3>
+              <h3 className="text-5xl font-black tracking-tighter">{btcDominanceStat ? btcDominanceStat.value : (statsLoading ? "..." : "58.2%")}</h3>
             </div>
             <div className="h-3 w-full rounded-full bg-muted/30 overflow-hidden">
-              <div className="h-full w-[58.2%] bg-cyan rounded-full shadow-[0_0_20px_-5px_rgba(192,252,248,0.6)]" />
+              <div className="h-full bg-cyan rounded-full shadow-[0_0_20px_-5px_rgba(192,252,248,0.6)]" style={{ width: `${btcDominanceStat?.numeric ?? 58.2}%` }} />
             </div>
           </Card>
 
@@ -602,35 +647,128 @@ export default function Dashboard() {
                   <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">
                     Market Sentiment
                   </p>
-                  <h3 className="text-5xl font-black tracking-tighter text-destructive mb-3">BEARISH</h3>
-                  <div className="flex items-center gap-4 mt-4">
-                    <div className="flex items-center gap-2">
-                      <Frown className="h-5 w-5 text-destructive" />
-                      <span className="text-sm font-bold text-muted-foreground">Fear: 68%</span>
+                  {sentimentLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-12 w-32 bg-muted/30 rounded mb-3"></div>
+                      <div className="h-4 w-24 bg-muted/30 rounded"></div>
                     </div>
+                  ) : sentimentError ? (
+                    <div>
+                      <h3 className="text-5xl font-black tracking-tighter text-muted-foreground mb-3">ERROR</h3>
+                      <div className="flex items-center gap-4 mt-4">
+                        <div className="flex items-center gap-2">
+                          <Frown className="h-5 w-5 text-muted-foreground" />
+                          <span className="text-sm font-bold text-muted-foreground">Unable to load</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : sentimentData ? (
+                    <div>
+                      <h3 className={`text-5xl font-black tracking-tighter mb-3 ${
+                        sentimentData.label === "BULLISH" 
+                          ? "text-green-500" 
+                          : sentimentData.label === "BEARISH" 
+                          ? "text-destructive" 
+                          : "text-yellow-500"
+                      }`}>
+                        {sentimentData.label}
+                      </h3>
+                      <div className="flex items-center gap-4 mt-4">
+                        <div className="flex items-center gap-2">
+                          {sentimentData.label === "BULLISH" ? (
+                            <TrendingUp className="h-5 w-5 text-green-500" />
+                          ) : sentimentData.label === "BEARISH" ? (
+                            <Frown className="h-5 w-5 text-destructive" />
+                          ) : (
+                            <Activity className="h-5 w-5 text-yellow-500" />
+                          )}
+                          <span className="text-sm font-bold text-muted-foreground">
+                            Fear: {sentimentData.fearIndex}%
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-muted-foreground">
+                            {sentimentData.newsCount} articles
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <h3 className="text-5xl font-black tracking-tighter text-muted-foreground mb-3">LOADING</h3>
+                      <div className="flex items-center gap-4 mt-4">
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-5 w-5 text-muted-foreground animate-spin" />
+                          <span className="text-sm font-bold text-muted-foreground">Analyzing...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className={`rounded-2xl p-4 border ${
+                  sentimentData?.label === "BULLISH" 
+                    ? "bg-green-500/20 border-green-500/30" 
+                    : sentimentData?.label === "BEARISH" 
+                    ? "bg-destructive/20 border-destructive/30"
+                    : "bg-yellow-500/20 border-yellow-500/30"
+                }`}>
+                  {sentimentData?.label === "BULLISH" ? (
+                    <TrendingUp className="h-7 w-7 text-green-500" />
+                  ) : sentimentData?.label === "BEARISH" ? (
+                    <TrendingDown className="h-7 w-7 text-destructive" />
+                  ) : (
+                    <Activity className="h-7 w-7 text-yellow-500" />
+                  )}
+                </div>
+              </div>
+              {sentimentData && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-muted-foreground">Sentiment Score</span>
+                    <span className={`${
+                      sentimentData.label === "BULLISH" 
+                        ? "text-green-500" 
+                        : sentimentData.label === "BEARISH" 
+                        ? "text-destructive" 
+                        : "text-yellow-500"
+                    }`}>
+                      {sentimentData.score}/100
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted/30 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full ${
+                        sentimentData.label === "BULLISH" 
+                          ? "bg-green-500 shadow-[0_0_15px_-3px_rgba(34,197,94,0.6)]" 
+                          : sentimentData.label === "BEARISH" 
+                          ? "bg-destructive shadow-[0_0_15px_-3px_rgba(239,68,68,0.6)]"
+                          : "bg-yellow-500 shadow-[0_0_15px_-3px_rgba(234,179,8,0.6)]"
+                      }`}
+                      style={{ width: `${sentimentData.score}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-xs mt-3">
+                    <span className="text-muted-foreground font-medium">
+                      Confidence: {sentimentData.confidence}%
+                    </span>
+                    <button 
+                      onClick={refreshSentiment}
+                      className="text-muted-foreground hover:text-accent transition-colors"
+                      disabled={sentimentLoading}
+                    >
+                      <RefreshCw className={`h-3 w-3 ${sentimentLoading ? 'animate-spin' : ''}`} />
+                    </button>
                   </div>
                 </div>
-                <div className="rounded-2xl bg-destructive/20 p-4 border border-destructive/30">
-                  <TrendingDown className="h-7 w-7 text-destructive" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-muted-foreground">Sentiment Score</span>
-                  <span className="text-destructive">32/100</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-muted/30 overflow-hidden">
-                  <div className="h-full w-[32%] bg-destructive rounded-full shadow-[0_0_15px_-3px_rgba(239,68,68,0.6)]" />
-                </div>
-              </div>
+              )}
             </div>
           </Card>
 
           {/* Fear & Greed Index */}
           <Card className="col-span-4 p-8 bg-accent text-accent-foreground border border-accent shadow-glow-accent">
             <div className="mb-4">
-              <p className="mb-2 text-sm font-black uppercase tracking-widest opacity-70">Fear & Greed Index</p>
-              <h3 className="text-6xl font-black tracking-tighter">42</h3>
+              <h3 className="text-5xl font-black tracking-tighter">{totalCoinsStat ? totalCoinsStat.value : (statsLoading ? "..." : "19,413")}</h3>
+
             </div>
             <p className="text-base font-bold opacity-90">NEUTRAL TERRITORY</p>
           </Card>
@@ -797,7 +935,7 @@ export default function Dashboard() {
               </div>
               <div className="h-64 flex items-center justify-center relative">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart>
+                  <RechartsPieChart>
                     <Pie
                       data={fundingStageData}
                       cx="50%"
@@ -820,7 +958,7 @@ export default function Dashboard() {
                       }}
                       formatter={(value: number) => `${value}%`}
                     />
-                  </AreaChart>
+                  </RechartsPieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
@@ -906,7 +1044,7 @@ export default function Dashboard() {
               </div>
               <div className="h-64 flex items-center justify-center relative">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart>
+                  <RechartsPieChart>
                     <Pie
                       data={fundingSizeData}
                       cx="50%"
@@ -931,7 +1069,7 @@ export default function Dashboard() {
                         `${value} rounds ($${props.payload.amount}B)`
                       }
                     />
-                  </AreaChart>
+                  </RechartsPieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
@@ -1032,50 +1170,130 @@ export default function Dashboard() {
               >
                 US News
               </Button>
+              <Button
+                variant="outline"
+                onClick={refreshNews}
+                disabled={newsLoading}
+                className="font-bold h-12 px-6 border-2"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${newsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {newsItems.map((item, index) => (
-              <Card
-                key={index}
-                className="group cursor-pointer transition-all border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card"
-              >
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-accent/20 flex items-center justify-center font-black text-accent border border-accent/30">
-                      {item.source.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold">{item.source}</p>
-                      <p className="text-xs text-muted-foreground font-medium">{item.time}</p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant={item.sentiment === "bullish" ? "default" : "secondary"}
-                    className="text-xs font-bold uppercase"
+          {/* Loading State */}
+          {newsLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+              <span className="ml-3 text-muted-foreground">Loading latest news...</span>
+            </div>
+          )}
+
+          {/* Error State */}
+          {newsError && (
+            <Card className="bg-destructive/10 border-destructive/20 p-6 mb-6">
+              <p className="text-destructive">Error loading news: {newsError}</p>
+            </Card>
+          )}
+
+          {/* News Grid */}
+          {!newsLoading && !newsError && (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {(activeTab === "crypto" ? cryptoNews : usNews).map((item, index) => {
+                const sentimentDisplay = getSentimentDisplay(item.sentiment);
+                const sourceName = typeof item.source === 'string' ? item.source : item.source.name;
+                
+                return (
+                  <Card
+                    key={item.id}
+                    className="group cursor-pointer transition-all border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card"
+                    onClick={() => handleNewsClick(item)}
                   >
-                    {item.sentiment}
-                  </Badge>
+                    <div className="mb-4 flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        {/* Source logo */}
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl overflow-hidden bg-secondary/30 border border-accent/20 shrink-0">
+                          <img
+                            src={getSourceLogo(item.source)}
+                            alt={`${sourceName} logo`}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              // Fallback to a default icon if logo fails to load
+                              const target = e.target as HTMLImageElement;
+                              target.src = `data:image/svg+xml,${encodeURIComponent(
+                                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#D8698E"><rect width="24" height="24" rx="4" fill="#D8698E"/><text x="12" y="16" text-anchor="middle" fill="white" font-family="sans-serif" font-size="10" font-weight="bold">${sourceName.charAt(0).toUpperCase()}</text></svg>`
+                              )}`;
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">{sourceName}</p>
+                          <p className="text-xs text-muted-foreground font-medium">{item.time}</p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant={sentimentDisplay.variant}
+                        className="text-xs font-bold uppercase"
+                      >
+                        {sentimentDisplay.text}
+                      </Badge>
+                    </div>
+
+                    <h4 className="mb-3 text-lg font-black leading-tight group-hover:text-accent transition-colors">
+                      {item.title}
+                    </h4>
+
+                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2 leading-relaxed">{item.excerpt}</p>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {item.coin && (
+                        <Badge variant="outline" className="text-xs font-bold">
+                          {item.coin}
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs font-bold">
+                        {item.category === "crypto" ? "Crypto" : "US Market"}
+                      </Badge>
+                      <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground group-hover:text-accent transition-colors" />
+                    </div>
+                  </Card>
+                );
+              })}
+              
+              {/* No news message */}
+              {(activeTab === "crypto" ? cryptoNews : usNews).length === 0 && (
+                <div className="col-span-full">
+                  <Card className="bg-card border-border p-8 text-center">
+                    <p className="text-muted-foreground">No {activeTab === "crypto" ? "crypto" : "US"} news available at the moment.</p>
+                    <Button
+                      variant="outline"
+                      onClick={refreshNews}
+                      className="mt-4 font-bold"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Try Again
+                    </Button>
+                  </Card>
                 </div>
+              )}
+            </div>
+          )}
 
-                <h4 className="mb-3 text-lg font-black leading-tight group-hover:text-accent transition-colors">
-                  {item.title}
-                </h4>
-
-                <p className="mb-4 text-sm text-muted-foreground line-clamp-2 leading-relaxed">{item.excerpt}</p>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  {item.tags.map((tag, tagIndex) => (
-                    <Badge key={tagIndex} variant="outline" className="text-xs font-bold">
-                      {tag}
-                    </Badge>
-                  ))}
-                  <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground group-hover:text-accent transition-colors" />
-                </div>
-              </Card>
-            ))}
-          </div>
+          {/* View All News Link */}
+          {!newsLoading && !newsError && (activeTab === "crypto" ? cryptoNews : usNews).length > 0 && (
+            <div className="mt-8 text-center">
+              <Link href={`/news-sentiment?category=${activeTab}`}>
+                <Button
+                  size="lg"
+                  className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-14 px-8 text-base font-bold shadow-glow-accent"
+                >
+                  VIEW ALL {activeTab === "crypto" ? "CRYPTO" : "US"} NEWS
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </main>
     </div>
