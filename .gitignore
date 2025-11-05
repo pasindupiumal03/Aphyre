@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+build
+dist
+.vercel
+pnpm-lock.yaml
+.env
+.env.local
