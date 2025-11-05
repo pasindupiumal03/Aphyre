@@ -6,49 +6,43 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { TrendingUp, BarChart3, Coins, Globe, MessageSquare, Wallet, Zap, Search } from "lucide-react"
-
-const trendingTokens = [
-  {
-    name: "Coinbase Wrapped BTC",
-    symbol: "CBBTC",
-    price: "$107568.000844",
-    change: "-0.03%",
-    volume: "$26,387,514",
-    icon: "🪙",
-    color: "blue",
-  },
-  {
-    name: "Aave Token",
-    symbol: "AAVE",
-    price: "$212.785136",
-    change: "-0.05%",
-    volume: "$10,735,471",
-    icon: "👻",
-    color: "purple",
-  },
-  {
-    name: "ChainLink Token",
-    symbol: "LINK",
-    price: "$15.150938",
-    change: "-0.08%",
-    volume: "$8,384,119",
-    icon: "🔗",
-    color: "blue",
-  },
-  {
-    name: "SPX6900",
-    symbol: "SPX",
-    price: "$0.775628",
-    change: "-0.15%",
-    volume: "$2,434,864",
-    icon: "🎯",
-    color: "yellow",
-  },
-]
+import { TrendingUp, BarChart3, Coins, Globe, MessageSquare, Wallet, Zap, Search, Loader2, AlertCircle } from "lucide-react"
+import { useEthTracker } from "@/hooks/use-eth-tracker"
+import { useRouter } from "next/navigation"
 
 export default function ETHTracker() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [isSearching, setIsSearching] = useState(false)
+  const { data, isLoading, error, searchToken } = useEthTracker()
+  const router = useRouter()
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return
+    
+    // Validate Ethereum address format
+    const trimmedQuery = searchQuery.trim()
+    if (!trimmedQuery.startsWith('0x') || trimmedQuery.length !== 42) {
+      alert('Please enter a valid Ethereum token address (0x... format, 42 characters)')
+      return
+    }
+    
+    setIsSearching(true)
+    
+    try {
+      // Navigate to token detail page
+      router.push(`/eth-tracker/${trimmedQuery}`)
+    } catch (error) {
+      console.error('Navigation error:', error)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -151,7 +145,7 @@ export default function ETHTracker() {
         </div>
 
         {/* Token Search */}
-        <Card className="mb-12 p-8 border-accent/30 bg-gradient-to-br from-card to-accent/5 shadow-[0_0_40px_-12px_rgba(216,105,142,0.3)]">
+        <Card className="mb-12 p-8 border-accent/30 bg-linear-to-br from-card to-accent/5 shadow-[0_0_40px_-12px_rgba(216,105,142,0.3)]">
           <h3 className="text-3xl font-black tracking-tighter mb-6">TOKEN SEARCH</h3>
           <div className="flex gap-4">
             <div className="relative flex-1">
@@ -160,11 +154,20 @@ export default function ETHTracker() {
                 placeholder="Enter Ethereum token address (0x...)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
                 className="h-14 pl-12 text-base font-medium bg-secondary/50 border-border"
               />
             </div>
-            <Button className="h-14 px-8 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-base shadow-glow-accent">
-              Search
+            <Button 
+              onClick={handleSearch}
+              disabled={isSearching || !searchQuery.trim()}
+              className="h-14 px-8 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-base shadow-glow-accent disabled:opacity-50"
+            >
+              {isSearching ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                "Search"
+              )}
             </Button>
           </div>
         </Card>
@@ -175,26 +178,89 @@ export default function ETHTracker() {
             TRENDING ETH TOKENS <span className="text-cyan drop-shadow-[0_0_30px_rgba(192,252,248,0.5)]">(24H)</span>
           </h3>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {trendingTokens.map((token, index) => (
-              <Link key={index} href={`/eth-tracker/${token.symbol.toLowerCase()}`}>
-                <Card className="group cursor-pointer transition-all border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="mb-4 h-20 w-20 rounded-full bg-gradient-to-br from-accent/20 to-cyan/20 flex items-center justify-center text-4xl border-2 border-accent/30">
-                      {token.icon}
-                    </div>
-                    <h4 className="text-lg font-black mb-1 group-hover:text-accent transition-colors">{token.name}</h4>
-                    <Badge variant="secondary" className="mb-4 font-bold">
-                      {token.symbol}
-                    </Badge>
-                    <p className="text-2xl font-black text-accent mb-2">{token.price}</p>
-                    <p className="text-sm font-bold text-destructive mb-3">{token.change}</p>
-                    <p className="text-xs text-muted-foreground font-medium">Volume: {token.volume}</p>
+          {error ? (
+            <Card className="p-8 border-destructive/30 bg-destructive/5">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+                <p className="text-destructive font-medium">Failed to load trending tokens: {error}</p>
+              </div>
+            </Card>
+          ) : isLoading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {[...Array(20)].map((_, index) => (
+                <Card key={index} className="p-6 bg-card">
+                  <div className="flex flex-col items-center text-center animate-pulse">
+                    <div className="mb-4 h-20 w-20 rounded-full bg-secondary/50"></div>
+                    <div className="h-4 w-32 bg-secondary/50 rounded mb-2"></div>
+                    <div className="h-3 w-16 bg-secondary/50 rounded mb-4"></div>
+                    <div className="h-6 w-24 bg-secondary/50 rounded mb-2"></div>
+                    <div className="h-3 w-12 bg-secondary/50 rounded mb-3"></div>
+                    <div className="h-3 w-20 bg-secondary/50 rounded"></div>
                   </div>
                 </Card>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : data?.trendingTokens && data.trendingTokens.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {data.trendingTokens.slice(0, 20).map((token, index) => (
+                <Link key={token.token_address || index} href={`/eth-tracker/${token.token_address}`}>
+                  <Card className="group cursor-pointer transition-all border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="mb-4 h-20 w-20 rounded-full bg-linear-to-br from-accent/20 to-cyan/20 flex items-center justify-center text-4xl border-2 border-accent/30">
+                        {token.logo ? (
+                          <img 
+                            src={token.logo} 
+                            alt={token.name} 
+                            className="w-12 h-12 rounded-full"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                              const parent = (e.target as HTMLImageElement).parentElement
+                              if (parent) {
+                                parent.innerHTML = token.symbol?.charAt(0) || '?'
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-xl font-bold text-accent">
+                            {token.symbol?.charAt(0) || '?'}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-lg font-black mb-1 group-hover:text-accent transition-colors line-clamp-2 h-14 flex items-center">
+                        {token.name || 'Unknown Token'}
+                      </h4>
+                      <Badge variant="secondary" className="mb-4 font-bold">
+                        {token.symbol || 'N/A'}
+                      </Badge>
+                      <p className="text-2xl font-black text-accent mb-2">
+                        {token.usdPrice ? `${Number(token.usdPrice).toFixed(6)}` : 'N/A'}
+                      </p>
+                      <p className={`text-sm font-bold mb-3 ${
+                        token.pricePercentChange['24h'] && token.pricePercentChange['24h'] > 0 
+                          ? 'text-green-500' 
+                          : 'text-destructive'
+                      }`}>
+                        {token.pricePercentChange['24h'] 
+                          ? `$${token.pricePercentChange['24h'] > 0 ? '+' : ''}${token.pricePercentChange['24h'].toFixed(2)}%`
+                          : 'N/A'
+                        }
+                      </p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Volume: ${token.totalVolume['24h'] ? `${token.totalVolume['24h'].toLocaleString()}` : 'N/A'}
+                      </p>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Card className="p-8 border-muted">
+              <div className="text-center">
+                <Coins className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground font-medium">No trending tokens available at the moment.</p>
+              </div>
+            </Card>
+          )}
         </div>
       </main>
     </div>
