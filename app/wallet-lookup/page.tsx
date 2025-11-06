@@ -18,7 +18,11 @@ import {
   Copy,
   ExternalLink,
   CheckCircle2,
+  Loader2,
+  AlertCircle,
 } from "lucide-react"
+import { useWalletLookup } from "@/hooks/use-wallet-lookup"
+import { useToast } from "@/hooks/use-toast"
 
 const sampleWallets = [
   {
@@ -38,72 +42,39 @@ const sampleWallets = [
   },
 ]
 
-const mockWalletDetails = {
-  address: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
-  totalValue: "$45,234.50",
-  tokenCount: 12,
-  solBalance: 125.5,
-  tokens: [
-    {
-      icon: "🪙",
-      name: "Solana",
-      symbol: "SOL",
-      balance: 125.5,
-      value: "$18,825.00",
-    },
-    {
-      icon: "🔮",
-      name: "Marinade Staked SOL",
-      symbol: "mSOL",
-      balance: 85.3,
-      value: "$12,796.50",
-    },
-    {
-      icon: "📊",
-      name: "Raydium",
-      symbol: "RAY",
-      balance: 2500,
-      value: "$5,625.00",
-    },
-    {
-      icon: "🚀",
-      name: "Orca",
-      symbol: "ORCA",
-      balance: 180,
-      value: "$3,240.00",
-    },
-    {
-      icon: "🎪",
-      name: "Magic Eden",
-      symbol: "MAGIC",
-      balance: 450,
-      value: "$2,250.00",
-    },
-    {
-      icon: "🏺",
-      name: "Atlas",
-      symbol: "ATLAS",
-      balance: 5000,
-      value: "$2,500.00",
-    },
-  ],
-}
-
 export default function WalletLookup() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [walletDetails, setWalletDetails] = useState<typeof mockWalletDetails | null>(null)
   const [copied, setCopied] = useState(false)
+  const { walletSummary, isLoading, error, searchWallet, clearResults } = useWalletLookup()
+  const { toast } = useToast()
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (searchQuery.trim()) {
-      setWalletDetails(mockWalletDetails)
+      await searchWallet(searchQuery.trim())
     }
   }
 
-  const handleCopyAddress = () => {
-    navigator.clipboard.writeText(walletDetails?.address || "")
+  const handleCopyAddress = (address: string) => {
+    navigator.clipboard.writeText(address)
     setCopied(true)
+    toast({
+      id: `copy-${Date.now()}`,
+      title: "Address copied!",
+      description: "Wallet address has been copied to clipboard.",
+    })
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const formatBalance = (balance: number): string => {
+    if (balance >= 1000000) {
+      return `${(balance / 1000000).toFixed(2)}M`
+    } else if (balance >= 1000) {
+      return `${(balance / 1000).toFixed(2)}K`
+    } else if (balance >= 1) {
+      return balance.toFixed(2)
+    } else {
+      return balance.toFixed(6)
+    }
   }
 
   return (
@@ -224,20 +195,33 @@ export default function WalletLookup() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-14 text-base font-medium bg-secondary/50 border-border"
-                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                onKeyPress={(e) => e.key === "Enter" && !isLoading && handleSearch()}
+                disabled={isLoading}
               />
             </div>
             <Button
               onClick={handleSearch}
-              className="h-14 px-8 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-base shadow-glow-accent"
+              disabled={isLoading || !searchQuery.trim()}
+              className="h-14 px-8 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-base shadow-glow-accent disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Search className="h-5 w-5 mr-2" />
-              Search
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <Search className="h-5 w-5 mr-2" />
+              )}
+              {isLoading ? "Searching..." : "Search"}
             </Button>
           </div>
+
+          {error && (
+            <div className="mt-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <p className="text-red-500 font-medium">{error}</p>
+            </div>
+          )}
         </Card>
 
-        {walletDetails && (
+        {walletSummary && (
           <>
             {/* Wallet Summary */}
             <Card className="mb-12 p-10 border-accent/30 bg-gradient-to-br from-card to-accent/5">
@@ -246,12 +230,12 @@ export default function WalletLookup() {
                   <h3 className="text-2xl font-black tracking-tighter mb-3">Wallet Details</h3>
                   <div className="flex items-center gap-3 mb-6">
                     <code className="text-sm font-mono font-medium text-muted-foreground bg-secondary/30 px-3 py-2 rounded-lg">
-                      {walletDetails.address}
+                      {walletSummary.address}
                     </code>
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={handleCopyAddress}
+                      onClick={() => handleCopyAddress(walletSummary.address)}
                       className="h-10 w-10 hover:bg-secondary/50 hover:border-accent/50 bg-transparent"
                     >
                       {copied ? <CheckCircle2 className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
@@ -260,7 +244,7 @@ export default function WalletLookup() {
                 </div>
                 <Button
                   className="h-12 px-6 bg-accent text-accent-foreground hover:bg-accent/90 font-bold shadow-glow-accent"
-                  onClick={() => window.open(`https://solscan.io/account/${walletDetails.address}`, "_blank")}
+                  onClick={() => window.open(`https://solscan.io/account/${walletSummary.address}`, "_blank")}
                 >
                   <ExternalLink className="h-5 w-5 mr-2" />
                   View on Solscan
@@ -270,69 +254,137 @@ export default function WalletLookup() {
               {/* Stats Grid */}
               <div className="grid grid-cols-3 gap-6">
                 <Card className="p-6 bg-secondary/20 border-accent/20">
-                  <p className="text-muted-foreground text-sm font-semibold mb-2">Total Value</p>
-                  <p className="text-3xl font-black tracking-tighter text-accent">{walletDetails.totalValue}</p>
-                </Card>
-                <Card className="p-6 bg-secondary/20 border-accent/20">
-                  <p className="text-muted-foreground text-sm font-semibold mb-2">Token Count</p>
-                  <p className="text-3xl font-black tracking-tighter text-accent">{walletDetails.tokenCount}</p>
+                  <p className="text-muted-foreground text-sm font-semibold mb-2">Total Tokens</p>
+                  <p className="text-3xl font-black tracking-tighter text-accent">{walletSummary.tokenCount}</p>
                 </Card>
                 <Card className="p-6 bg-secondary/20 border-accent/20">
                   <p className="text-muted-foreground text-sm font-semibold mb-2">SOL Balance</p>
-                  <p className="text-3xl font-black tracking-tighter text-accent">{walletDetails.solBalance} SOL</p>
+                  <p className="text-3xl font-black tracking-tighter text-accent">{walletSummary.solBalance} SOL</p>
+                </Card>
+                <Card className="p-6 bg-secondary/20 border-accent/20">
+                  <p className="text-muted-foreground text-sm font-semibold mb-2">Token Holdings</p>
+                  <p className="text-3xl font-black tracking-tighter text-accent">{walletSummary.tokens.length}</p>
                 </Card>
               </div>
             </Card>
 
-            {/* Token Holdings */}
-            <div>
-              <div className="flex items-center gap-3 mb-8">
-                <Coins className="h-6 w-6 text-accent" />
-                <h3 className="text-2xl font-black tracking-tighter">Token Holdings</h3>
-              </div>
+            {/* SOL Balance */}
+            {walletSummary.solBalance > 0 && (
+              <Card className="mb-6 p-6 bg-card border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">S</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-lg">Solana</p>
+                      <p className="text-sm text-muted-foreground font-medium">SOL</p>
+                    </div>
+                  </div>
 
-              <div className="space-y-4">
-                {walletDetails.tokens.map((token, index) => (
-                  <Card
-                    key={index}
-                    className="group transition-all border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="text-3xl">{token.icon}</div>
-                        <div className="flex-1">
-                          <p className="font-bold text-lg">{token.name}</p>
+                  <div className="text-right flex-1">
+                    <p className="font-bold text-lg">{formatBalance(walletSummary.solBalance)}</p>
+                    <p className="text-sm text-muted-foreground font-medium">SOL</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-6">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 hover:bg-secondary/50 hover:border-accent/50 bg-transparent"
+                      onClick={() => handleCopyAddress("So11111111111111111111111111111111111111112")}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Token Holdings */}
+            {walletSummary.tokens.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-8">
+                  <Coins className="h-6 w-6 text-accent" />
+                  <h3 className="text-2xl font-black tracking-tighter">Token Holdings ({walletSummary.tokens.length})</h3>
+                </div>
+
+                <div className="space-y-4">
+                  {walletSummary.tokens.map((token, index) => (
+                    <Card
+                      key={index}
+                      className="group transition-all border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="w-12 h-12 rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden">
+                            {token.logoURI ? (
+                              <img 
+                                src={token.logoURI} 
+                                alt={token.symbol}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement
+                                  target.style.display = 'none'
+                                  const sibling = target.nextElementSibling as HTMLElement
+                                  if (sibling) sibling.style.display = 'flex'
+                                }}
+                              />
+                            ) : null}
+                            <div 
+                              className={`w-full h-full flex items-center justify-center text-sm font-bold ${token.logoURI ? 'hidden' : 'flex'}`}
+                            >
+                              {token.symbol.charAt(0)}
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-lg truncate">{token.name}</p>
+                            <p className="text-sm text-muted-foreground font-medium">{token.symbol}</p>
+                          </div>
+                        </div>
+
+                        <div className="text-right flex-1">
+                          <p className="font-bold text-lg">{formatBalance(token.balance)}</p>
                           <p className="text-sm text-muted-foreground font-medium">{token.symbol}</p>
                         </div>
-                      </div>
 
-                      <div className="text-right flex-1">
-                        <p className="font-bold text-lg">{token.balance.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground font-medium">{token.value}</p>
+                        <div className="flex items-center gap-2 ml-6">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 hover:bg-secondary/50 hover:border-accent/50 bg-transparent"
+                            onClick={() => handleCopyAddress(token.mint)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 hover:bg-secondary/50 hover:border-accent/50 bg-transparent"
+                            onClick={() => window.open(`https://solscan.io/token/${token.mint}`, "_blank")}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-
-                      <div className="flex items-center gap-2 ml-6">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-10 w-10 hover:bg-secondary/50 hover:border-accent/50 bg-transparent"
-                          onClick={() => {
-                            navigator.clipboard.writeText(token.symbol)
-                          }}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {walletSummary.tokens.length === 0 && walletSummary.solBalance === 0 && (
+              <Card className="p-12 text-center bg-secondary/20 border-accent/20">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2">No Tokens Found</h3>
+                <p className="text-muted-foreground">This wallet doesn't contain any tokens or SOL.</p>
+              </Card>
+            )}
           </>
         )}
 
         {/* Sample Wallets - shows when no search performed */}
-        {!walletDetails && (
+        {!walletSummary && !isLoading && (
           <div>
             <div className="flex items-center gap-3 mb-8">
               <Zap className="h-6 w-6 text-accent" />
@@ -355,7 +407,7 @@ export default function WalletLookup() {
                         variant="outline"
                         size="icon"
                         className="h-10 w-10 hover:bg-secondary/50 hover:border-accent/50 bg-transparent"
-                        onClick={() => navigator.clipboard.writeText(wallet.address)}
+                        onClick={() => handleCopyAddress(wallet.address)}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -363,7 +415,7 @@ export default function WalletLookup() {
                         className="h-10 px-6 bg-accent text-accent-foreground hover:bg-accent/90 font-bold shadow-glow-accent"
                         onClick={() => {
                           setSearchQuery(wallet.address)
-                          setWalletDetails(mockWalletDetails)
+                          searchWallet(wallet.address)
                         }}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />

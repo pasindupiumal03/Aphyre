@@ -2,36 +2,73 @@ import { useState, useEffect } from 'react'
 
 export interface SolanaTokenDetails {
   token?: {
-    address: string
     name: string
     symbol: string
+    mint: string
+    uri?: string
     decimals: number
-    supply: string
-    logoURI?: string
-    description?: string
-    website?: string
-    twitter?: string
-    telegram?: string
-    verified: boolean
-    holders: number
-    createdAt: string
     image?: string
-    price?: number
-    marketCap?: number
-    volume24h?: number
+    description?: string
+    extensions?: {
+      twitter?: string
+      telegram?: string
+    }
+    tags?: string[]
+    creator?: {
+      name: string
+      site: string
+    }
+    hasFileMetaData?: boolean
   }
   pools?: Array<{
-    price?: {
+    liquidity?: {
+      quote: number
       usd: number
     }
-    liquidity?: number
-    volume24h?: number
+    price?: {
+      quote: number
+      usd: number
+    }
+    tokenSupply?: number
+    lpBurn?: number
+    tokenAddress?: string
+    marketCap?: {
+      quote: number
+      usd: number
+    }
+    market?: string
+    quoteToken?: string
+    decimals?: number
+    security?: {
+      freezeAuthority?: string
+      mintAuthority?: string
+    }
+    lastUpdated?: number
+    createdAt?: number
+    poolId?: string
   }>
   events?: {
-    '24h'?: {
-      priceChangePercentage: number
-    }
+    '1m'?: { priceChangePercentage: number }
+    '5m'?: { priceChangePercentage: number }
+    '15m'?: { priceChangePercentage: number }
+    '30m'?: { priceChangePercentage: number }
+    '1h'?: { priceChangePercentage: number }
+    '24h'?: { priceChangePercentage: number }
   }
+  risk?: {
+    rugged: boolean
+    risks: Array<{
+      name: string
+      description: string
+      level: string
+      score: number
+    }>
+    score: number
+  }
+  buys?: number
+  sells?: number
+  txns?: number
+  holders?: number
   // Legacy structure for compatibility
   address?: string
   name?: string
@@ -48,7 +85,6 @@ export interface SolanaTokenDetails {
   twitter?: string
   telegram?: string
   verified?: boolean
-  holders?: number
   createdAt?: string
   riskAnalysis?: {
     rugPullRisk: number
