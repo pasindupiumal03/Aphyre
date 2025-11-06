@@ -27,8 +27,9 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react"
-import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip, Bar, BarChart } from "recharts"
+import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip, Bar, BarChart, PieChart, Pie, Cell } from "recharts"
 import { useSolanaTokenDetails } from "@/hooks/use-solana-token-details"
+import { formatCurrency, formatNumber } from "@/lib/utils"
 
 export default function SolanaTokenDetailPage({ params }: { params: Promise<{ address: string }> }) {
   const resolvedParams = use(params)
@@ -47,7 +48,8 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
   }
 
   const openSolscan = () => {
-    window.open(`https://solscan.io/token/${address}`, '_blank')
+    const tokenAddress = tokenData?.token?.mint || address
+    window.open(`https://solscan.io/token/${tokenAddress}`, '_blank')
   }
 
   return (
@@ -242,7 +244,7 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
                 </div>
                 <div className="flex gap-4 mt-4">
                   <Button
-                    onClick={() => copyToClipboard(address)}
+                    onClick={() => copyToClipboard(tokenData.token?.mint || address)}
                     variant="outline"
                     className="gap-2 font-bold"
                   >
@@ -260,14 +262,6 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
                 </div>
               </div>
               <div className="flex gap-3">
-                <Badge className={`px-4 py-2 text-sm font-bold ${
-                  tokenData.verified 
-                    ? "bg-green-500/20 text-green-500 border-green-500/30" 
-                    : "bg-yellow-500/20 text-yellow-500 border-yellow-500/30"
-                }`}>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  {tokenData.verified ? "Verified" : "Unverified"}
-                </Badge>
                 <Badge className="bg-[#9945ff]/20 text-[#9945ff] border-[#9945ff]/30 px-4 py-2 text-sm font-bold">
                   SPL Token
                 </Badge>
@@ -307,7 +301,11 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
                           ? 'bg-green-500' 
                           : 'bg-red-500'
                       }`}>
-                        <TrendingUp className="h-4 w-4" />
+                        {tokenData.events?.['24h']?.priceChangePercentage && tokenData.events['24h'].priceChangePercentage > 0 ? (
+                          <TrendingUp className="h-4 w-4" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4" />
+                        )}
                         {tokenData.events?.['24h']?.priceChangePercentage 
                           ? `${tokenData.events['24h'].priceChangePercentage > 0 ? '+' : ''}${tokenData.events['24h'].priceChangePercentage.toFixed(2)}%`
                           : 'N/A'
@@ -329,10 +327,11 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
                 <div>
                   <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">Market Cap</p>
                   <h3 className="text-5xl font-black tracking-tighter">
-                    ${tokenData.token?.marketCap ? (tokenData.token.marketCap / 1000000).toFixed(2) + 'M' : 'N/A'}
+                    {tokenData.pools?.[0]?.marketCap?.usd ? 
+                      `$${(tokenData.pools[0].marketCap.usd / 1000000).toFixed(2)}M` : 'N/A'}
                   </h3>
                   <p className="text-sm font-medium text-muted-foreground mt-2">
-                    Supply: {tokenData.token?.supply ? parseFloat(tokenData.token.supply).toLocaleString() : 'N/A'}
+                    Supply: {tokenData.pools?.[0]?.tokenSupply ? formatNumber(tokenData.pools[0].tokenSupply) : 'N/A'}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-[#9945ff]/20 p-4">
@@ -347,7 +346,8 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
                 <div>
                   <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">Volume (24h)</p>
                   <h3 className="text-5xl font-black tracking-tighter">
-                    ${tokenData.pools?.[0]?.volume24h ? (tokenData.pools[0].volume24h / 1000000).toFixed(2) + 'M' : tokenData.token?.volume24h ? (tokenData.token.volume24h / 1000000).toFixed(2) + 'M' : 'N/A'}
+                    {tokenData.pools?.[0]?.liquidity?.usd ? 
+                      `$${(tokenData.pools[0].liquidity.usd / 1000000).toFixed(2)}M` : 'N/A'}
                   </h3>
                   <div className="flex items-center gap-2 mt-2 text-sm font-bold">
                     <Activity className="h-4 w-4 text-cyan-500" />
@@ -365,7 +365,7 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
               <div className="mb-4">
                 <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">Total Holders</p>
                 <h3 className="text-5xl font-black tracking-tighter">
-                  {tokenData.token?.holders ? tokenData.token.holders.toLocaleString() : 'N/A'}
+                  {tokenData.holders ? Math.round(tokenData.holders).toLocaleString() : 'N/A'}
                 </h3>
               </div>
               <div className="rounded-xl bg-[#9945ff]/20 p-3 w-fit border border-[#9945ff]/30">
@@ -377,7 +377,7 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
           <Card className="col-span-3 p-8 border-border hover:border-accent/50 transition-all bg-card">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-3">
-                {typeof tokenData.events['24h'].priceChangePercentage === 'number' && tokenData.events['24h'].priceChangePercentage > 0 ? (
+                {tokenData.events?.['24h']?.priceChangePercentage && tokenData.events['24h'].priceChangePercentage > 0 ? (
                   <TrendingUp className="h-8 w-8 text-green-400" />
                 ) : (
                   <TrendingDown className="h-8 w-8 text-red-400" />
@@ -385,11 +385,18 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
                 <span className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground" style={{fontFamily:'Poppins,sans-serif'}}>24h Change</span>
               </div>
               <p className={`text-5xl font-black tracking-tighter ${
-                typeof tokenData.events['24h'].priceChangePercentage === 'number' && tokenData.events['24h'].priceChangePercentage > 0
-                  ? 'text-green-400'
-                  : 'text-red-400'
+                tokenData.events?.['24h']?.priceChangePercentage 
+                  ? Math.abs(tokenData.events['24h'].priceChangePercentage) < 0.01
+                    ? 'text-yellow-500'
+                    : tokenData.events['24h'].priceChangePercentage > 0
+                    ? 'text-green-400'
+                    : 'text-red-400'
+                  : 'text-gray-400'
               }`} style={{fontFamily:'Poppins,sans-serif'}}>
-                {tokenData.events['24h']?.priceChangePercentage ? (tokenData.events['24h'].priceChangePercentage / 100).toFixed(2) + '%' : 'N/A'}
+                {tokenData.events?.['24h']?.priceChangePercentage !== undefined 
+                  ? `${tokenData.events['24h'].priceChangePercentage > 0 ? '+' : ''}${tokenData.events['24h'].priceChangePercentage.toFixed(2)}%`
+                  : 'N/A'
+                }
               </p>
             </div>
           </Card>
@@ -507,38 +514,33 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
           </Card>
         ) : error ? null : tokenData ? (
           <Card className="mb-12 border border-[#9945ff]/30 bg-gradient-to-br from-card to-[#9945ff]/5 p-8 shadow-[0_0_40px_-12px_rgba(153,69,255,0.2)]">
-            <div className="mb-6">
-              <h4 className="text-2xl font-black tracking-tight mb-2">Price History (24h)</h4>
-              <p className="text-sm text-muted-foreground font-medium">Real-time price movements</p>
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <h4 className="text-2xl font-black tracking-tight mb-2">Live Price Chart</h4>
+                <p className="text-sm text-muted-foreground font-medium">Real-time trading data from DexScreener</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => window.open(`https://dexscreener.com/solana/${tokenData.token?.mint || address}`, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4" />
+                View on DexScreener
+              </Button>
             </div>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={tokenData.priceHistory}>
-                  <defs>
-                    <linearGradient id="solPriceGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14f195" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#14f195" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "12px",
-                      fontWeight: 600,
-                    }}
-                    formatter={(value: number) => `$${value.toFixed(6)}`}
-                  />
-                  <Area type="monotone" dataKey="price" stroke="#14f195" strokeWidth={3} fill="url(#solPriceGradient)" />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="h-[600px] w-full rounded-xl overflow-hidden border border-border/50">
+              <iframe
+                src={`https://dexscreener.com/solana/${tokenData.token?.mint || address}?embed=1&theme=dark&trades=0&info=0`}
+                width="100%"
+                height="100%"
+                style={{ border: 'none' }}
+                title={`${tokenData.token?.symbol || 'Token'} Price Chart`}
+                allowFullScreen
+              />
             </div>
           </Card>
-        ) : null}
-
-        {/* Token Distribution Analytics */}
+        ) : null}        {/* Token Distribution Analytics */}
         {isLoading ? (
           <div className="grid grid-cols-12 gap-6 mb-12">
             <Card className="col-span-7 p-8 animate-pulse">
@@ -564,7 +566,7 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
               </div>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={tokenData.holderDistribution}>
+                  <BarChart data={tokenData.holderDistribution || []}>
                     <XAxis dataKey="range" stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={600} />
                     <Tooltip
@@ -595,7 +597,7 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
                 <p className="text-sm text-muted-foreground font-medium">How holders acquired tokens</p>
               </div>
               <div className="space-y-6">
-                {tokenData.acquisitionBreakdown.map((item, index) => (
+                {(tokenData.acquisitionBreakdown || []).map((item, index) => (
                   <div key={index} className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -666,7 +668,7 @@ export default function SolanaTokenDetailPage({ params }: { params: Promise<{ ad
                   </tr>
                 </thead>
                 <tbody>
-                  {tokenData.topHolders.map((holder, index) => (
+                  {(tokenData.topHolders || []).map((holder, index) => (
                     <tr key={index} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">

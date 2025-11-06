@@ -70,15 +70,53 @@ export async function GET(req) {
     // Return the raw data structure with additional analytics
     const token = rawData.token;
 
-    // Generate mock analytics data based on real token data
-    const generateRiskAnalysis = (tokenData) => {
-      const baseScore = Math.random() * 30 + 60; // 60-90 base score
+    // Fetch holders data
+    let holdersData = null;
+    try {
+      const holdersUrl = `https://data.solanatracker.io/tokens/${address}/holders`;
+      const holdersResponse = await fetch(holdersUrl, {
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+      });
       
-      // Adjust based on actual data
-      let rugPullRisk = Math.max(10, Math.min(40, 50 - (tokenData.marketCap / 1000000) * 5));
-      let tokenHealth = Math.min(95, baseScore + (tokenData.holders || 1000) / 100);
-      let communityTrust = Math.min(90, baseScore + (tokenData.volume24h || 100000) / 10000);
-      let liquidityScore = Math.min(85, baseScore + (tokenData.liquidity || 50000) / 1000);
+      if (holdersResponse.ok) {
+        holdersData = await holdersResponse.json();
+        console.log('Holders data fetched successfully');
+      }
+    } catch (error) {
+      console.log('Could not fetch holders data:', error);
+    }
+
+    // Add holders count to the response - prefer the count from main API response
+    const holdersCount = rawData.holders || holdersData?.total || 0;
+    console.log('Holders count debug:', {
+      rawDataHolders: rawData.holders,
+      holdersDataTotal: holdersData?.total,
+      finalHoldersCount: holdersCount
+    });
+
+    // Generate mock analytics data based on real token data
+    const generateRiskAnalysis = (tokenData, riskData) => {
+      // Use real risk data if available
+      if (riskData?.score !== undefined) {
+        const score = Math.max(0, Math.min(100, 100 - (riskData.score * 10))); // Convert risk score to health score
+        return {
+          rugPullRisk: Math.min(100, riskData.score * 10),
+          tokenHealth: score,
+          communityTrust: riskData.rugged ? 20 : score,
+          liquidityScore: rawData.pools?.[0]?.liquidity?.usd ? Math.min(100, 60 + (rawData.pools[0].liquidity.usd / 100000)) : 50,
+          overallScore: Math.round(score)
+        };
+      }
+      
+      // Fallback to generated scores
+      const baseScore = Math.random() * 30 + 60;
+      let rugPullRisk = Math.max(10, Math.min(40, 50 - ((rawData.pools?.[0]?.marketCap?.usd || 0) / 1000000) * 5));
+      let tokenHealth = Math.min(95, baseScore + (holdersCount / 100));
+      let communityTrust = Math.min(90, baseScore + ((rawData.pools?.[0]?.liquidity?.usd || 0) / 10000));
+      let liquidityScore = Math.min(85, baseScore + ((rawData.pools?.[0]?.liquidity?.usd || 0) / 1000));
       
       return {
         rugPullRisk: Math.round(rugPullRisk),
@@ -120,10 +158,20 @@ export async function GET(req) {
     };
 
     // Generate mock top holders
-    const generateTopHolders = (tokenData) => {
+    const generateTopHolders = (tokenData, holdersData) => {
+      if (holdersData?.accounts) {
+        return holdersData.accounts.slice(0, 6).map(account => ({
+          address: account.wallet,
+          balance: account.amount.toLocaleString(),
+          usdValue: `$${account.value.usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          percentage: parseFloat(account.percentage.toFixed(2))
+        }));
+      }
+      
+      // Fallback to mock data
       const holders = [];
-      const supply = parseFloat(tokenData.supply) || 1000000000;
-      const price = tokenData.price || 0.001;
+      const supply = parseFloat(rawData.pools?.[0]?.tokenSupply || 1000000000);
+      const price = rawData.pools?.[0]?.price?.usd || 0.001;
       
       const holderTypes = [
         "Raydium Pool", "Jupiter Aggregator", "Orca Pool", "Meteora Pool"
@@ -156,15 +204,16 @@ export async function GET(req) {
       ];
     };
 
-    // Return raw API structure with additional analytics
+    // Return raw API structure with additional analytics and holders count
     const responseData = {
-      ...rawData, // Keep original structure (token, pools, events, etc.)
+      ...rawData, // Keep original structure (token, pools, events, holders, etc.)
+      holders: holdersCount, // Ensure holders count is set correctly
       // Add legacy compatibility and analytics
-      riskAnalysis: generateRiskAnalysis(token),
-      priceHistory: generatePriceHistory(rawData.pools?.[0]?.price?.usd || token.price),
-      holderDistribution: generateHolderDistribution(token.holders),
-      topHolders: generateTopHolders(token),
-      acquisitionBreakdown: generateAcquisitionBreakdown(token.holders)
+      riskAnalysis: generateRiskAnalysis(token, rawData.risk),
+      priceHistory: generatePriceHistory(rawData.pools?.[0]?.price?.usd || 0.001),
+      holderDistribution: generateHolderDistribution(holdersCount),
+      topHolders: generateTopHolders(token, holdersData),
+      acquisitionBreakdown: generateAcquisitionBreakdown(holdersCount)
     };
 
     return NextResponse.json(responseData);

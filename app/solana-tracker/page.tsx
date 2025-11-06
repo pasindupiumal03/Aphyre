@@ -262,11 +262,10 @@ export default function SolanaTracker() {
           ) : data?.trendingTokens && data.trendingTokens.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               {data.trendingTokens.slice(0, 20).map((token, index) => (
-                <Link key={token.address || index} href={`/solana-tracker/${token.address}`}>
-                  <Card className="group cursor-pointer transition-all border-border hover:border-cyan/50 hover:shadow-[0_8px_30px_-12px_rgba(192,252,248,0.3)] p-6 bg-card">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="mb-4 h-20 w-20 rounded-full bg-gradient-to-br from-cyan/20 to-accent/20 flex items-center justify-center text-4xl border-2 border-cyan/30">
-                        {token.logoURI ? (
+                <Card key={token.token_address || index} className="p-6 bg-card border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-4 h-20 w-20 rounded-full bg-linear-to-br from-accent/20 to-cyan/20 flex items-center justify-center text-4xl border-2 border-accent/30">
+                      {token.logoURI ? (
                           <img 
                             src={token.logoURI} 
                             alt={token.name} 
@@ -309,7 +308,6 @@ export default function SolanaTracker() {
                       </p>
                     </div>
                   </Card>
-                </Link>
               ))}
             </div>
           ) : (
