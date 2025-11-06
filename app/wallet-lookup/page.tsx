@@ -28,7 +28,7 @@ import { useToast } from "@/hooks/use-toast"
 const sampleWallets = [
   {
     label: "Popular Trader",
-    address: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    address: "CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o",
     badgeColor: "bg-yellow-500/20 text-yellow-500 border-yellow-500/30",
   },
   {
@@ -164,12 +164,22 @@ export default function WalletLookup() {
 
   // Format currency values
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount)
+    if (amount >= 1e12) {
+      return `$${(amount / 1e12).toFixed(2)}T`
+    } else if (amount >= 1e9) {
+      return `$${(amount / 1e9).toFixed(2)}B`
+    } else if (amount >= 1e6) {
+      return `$${(amount / 1e6).toFixed(2)}M`
+    } else if (amount >= 1e3) {
+      return `$${(amount / 1e3).toFixed(2)}K`
+    } else {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount)
+    }
   }
 
   return (

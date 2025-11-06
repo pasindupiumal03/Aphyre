@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 const COINGECKO_URL = 'https://api.coingecko.com/api/v3/coins/ethereum';
 const ETHERSCAN_API_KEY = 'JQC41WVP8KQFAE7HBZ57KEQ739WIG6JA27';
 const ETHERSCAN_BASE = 'https://api.etherscan.io/api';
-const MORALIS_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjMzMDU5MWNkLTI4YWYtNDljMS1hZDgyLWM3YWZkZGE1MmMxZiIsIm9yZ0lkIjoiNDcyOTkwIiwidXNlcklkIjoiNDg2NTc4IiwidHlwZUlkIjoiOWYyZTQ4Y2ItZDgzMi00Zjg4LWI2OTYtNWZkNTJlMWE0Mjg5IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTkxNDgwOTksImV4cCI6NDkxNDkwODA5OX0.p3v0cK0insA-Ivgr0IoRPJeE8vPI9OZUN0S8vCkuGgI';
+const MORALIS_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjM5YzY0OGUyLWI1ZmItNGFiNy05MmU4LWI5OTc3ZGY1MTU4ZiIsIm9yZ0lkIjoiNDc5OTMwIiwidXNlcklkIjoiNDkzNzQzIiwidHlwZUlkIjoiYTMxNmNmY2MtYWY3NS00YjhmLWFiZDMtZGJmNzljOWMyMDMxIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NjI0NDU2ODAsImV4cCI6NDkxODIwNTY4MH0.atUWnyA-taBwQpQNbAtNnb01dTZE8JN8Ju5k6BMd90A';
 const MORALIS_BASE = 'https://deep-index.moralis.io/api/v2.2';
 
 export async function GET(req: Request) {
