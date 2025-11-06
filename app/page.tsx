@@ -31,6 +31,7 @@ import { useDashboardNews } from "@/hooks/use-dashboard-news"
 import { useMarketSentiment } from "@/hooks/use-market-sentiment"
 import { useMarketStats } from "@/hooks/use-market-stats"
 import { useFearGreedIndex } from "@/hooks/use-fear-greed-index"
+import { useMarketCapChart } from "@/hooks/use-market-cap-chart"
 
 // Mock data
 const marketData = [
@@ -378,6 +379,14 @@ export default function Dashboard() {
     refreshFearGreed 
   } = useFearGreedIndex();
 
+  // Market Cap Chart hook
+  const {
+    chartData: marketCapChartData,
+    isLoading: marketCapChartLoading,
+    error: marketCapChartError,
+    refreshChart: refreshMarketCapChart
+  } = useMarketCapChart();
+
   // Convenience lookups for the four cards
   const marketCapStat = statsData?.find((s) => s.label === "Market Cap");
   const volumeStat = statsData?.find((s) => s.label === "24h Volume");
@@ -571,35 +580,133 @@ export default function Dashboard() {
             <div className="relative">
               <div className="mb-6 flex items-start justify-between">
                 <div>
-                  <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">Market Cap</p>
+                  <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">Global Market Cap</p>
                   <div className="flex items-baseline gap-3">
                     <h3 className="text-7xl font-black tracking-tighter">
-                      {marketCapStat ? marketCapStat.value : (statsLoading ? "..." : "$4T")}
+                      {marketCapChartLoading ? (
+                        <span className="animate-pulse text-muted-foreground">...</span>
+                      ) : marketCapChartData ? (
+                        `$${(marketCapChartData.stats.current / 1000).toFixed(2)}T`
+                      ) : (
+                        marketCapStat ? marketCapStat.value : "$4T"
+                      )}
                     </h3>
-                      <Badge variant={marketCapStat?.change && marketCapStat.change < 0 ? "destructive" : "default"} className="gap-1 px-3 py-1 text-sm font-bold">
+                    <Badge 
+                      variant={
+                        marketCapChartData?.stats.dailyChange && marketCapChartData.stats.dailyChange < 0 
+                          ? "destructive" 
+                          : "default"
+                      } 
+                      className="gap-1 px-3 py-1 text-sm font-bold"
+                    >
+                      {marketCapChartData?.stats.dailyChange && marketCapChartData.stats.dailyChange >= 0 ? (
+                        <ArrowUpRight className="h-4 w-4" />
+                      ) : (
                         <ArrowDownRight className="h-4 w-4" />
-                        {typeof marketCapStat?.change === 'number' ? `${marketCapStat.change.toFixed(2)}%` : "N/A"}
-                      </Badge>
+                      )}
+                      {marketCapChartData?.stats.dailyChange 
+                        ? `${Math.abs(marketCapChartData.stats.dailyChange).toFixed(2)}%`
+                        : typeof marketCapStat?.change === 'number' 
+                        ? `${Math.abs(marketCapStat.change).toFixed(2)}%`
+                        : "N/A"
+                      }
+                    </Badge>
                   </div>
+                  {marketCapChartData && (
+                    <div className="mt-4 grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">30D High</p>
+                        <p className="text-lg font-black">${(marketCapChartData.stats.high30d / 1000).toFixed(2)}T</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">30D Low</p>
+                        <p className="text-lg font-black">${(marketCapChartData.stats.low30d / 1000).toFixed(2)}T</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Monthly</p>
+                        <p className={`text-lg font-black ${
+                          marketCapChartData.stats.monthlyChange >= 0 ? 'text-green-500' : 'text-red-500'
+                        }`}>
+                          {marketCapChartData.stats.monthlyChange >= 0 ? '+' : ''}
+                          {marketCapChartData.stats.monthlyChange.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="rounded-2xl bg-accent/20 p-4 shadow-glow-accent">
-                  <DollarSign className="h-8 w-8 text-accent" />
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-2xl bg-accent/20 p-4 shadow-glow-accent">
+                    <DollarSign className="h-8 w-8 text-accent" />
+                  </div>
+                  <button 
+                    onClick={refreshMarketCapChart}
+                    disabled={marketCapChartLoading}
+                    className="text-muted-foreground hover:text-accent transition-colors p-2 rounded-xl hover:bg-accent/10"
+                  >
+                    <RefreshCw className={`h-5 w-5 ${marketCapChartLoading ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
               </div>
-              <div className="h-32 mt-8">
+              
+              {/* Enhanced Chart */}
+              <div className="h-48 mt-8">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={marketData}>
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#3b82f6"
-                      strokeWidth={3}
-                      dot={false}
-                      strokeLinecap="round"
+                  <AreaChart data={marketCapChartData?.data || marketData}>
+                    <defs>
+                      <linearGradient id="marketCapGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#d8698e" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#d8698e" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey={marketCapChartData ? "date" : "time"}
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                      fontWeight={600}
+                      tickMargin={10}
+                      axisLine={false}
+                      tickLine={false}
                     />
-                  </LineChart>
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))" 
+                      fontSize={11} 
+                      fontWeight={600} 
+                      tickMargin={10}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(value) => 
+                        marketCapChartData ? `$${(value / 1000).toFixed(1)}T` : `$${(value / 1000).toFixed(0)}K`
+                      }
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "12px",
+                        fontWeight: 600,
+                        padding: "12px",
+                      }}
+                      formatter={(value: number) => 
+                        marketCapChartData 
+                          ? [`$${(value / 1000).toFixed(2)}T`, "Market Cap"]
+                          : [`$${value.toLocaleString()}`, "Value"]
+                      }
+                      labelFormatter={(label) => marketCapChartData ? `Date: ${label}` : `Time: ${label}`}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey={marketCapChartData ? "marketCap" : "value"}
+                      stroke="#d8698e"
+                      strokeWidth={3}
+                      fill="url(#marketCapGradient)"
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
+              
+              {marketCapChartData?.isFallback && (
+                <p className="mt-2 text-xs text-muted-foreground">Using fallback data</p>
+              )}
             </div>
           </Card>
 
