@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -87,7 +89,81 @@ const whyAphyreFeatures = [
   { title: "Advanced Twitter Tracker", description: "Track real-time market vibes and insights" },
 ]
 
+// Confetti type for window.confetti
+type ConfettiOptions = {
+  particleCount?: number;
+  spread?: number;
+  startVelocity?: number;
+  decay?: number;
+  gravity?: number;
+  drift?: number;
+  ticks?: number;
+  origin?: {
+    x?: number;
+    y?: number;
+  };
+  colors?: string[];
+  shapes?: string[];
+  scalar?: number;
+  zIndex?: number;
+  disableForReducedMotion?: boolean;
+};
+
+declare global {
+  interface Window {
+    confetti?: (options?: ConfettiOptions) => void;
+  }
+}
+
 export default function AboutPage() {
+  const router = useRouter()
+  const [scriptLoaded, setScriptLoaded] = useState(false)
+
+  // Load confetti script dynamically
+  useEffect(() => {
+    if (!window.confetti) {
+      const script = document.createElement("script");
+      script.src =
+        "https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js";
+      script.async = true;
+      script.onload = () => setScriptLoaded(true);
+      document.body.appendChild(script);
+
+      return () => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+    } else {
+      setScriptLoaded(true);
+    }
+  }, []);
+
+  const triggerConfetti = (buttonElement: HTMLButtonElement) => {
+    if (scriptLoaded && window.confetti && buttonElement) {
+      const rect = buttonElement.getBoundingClientRect();
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+      window.confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { x, y },
+        colors: ['#d8698e', '#3b82f6', '#10b981', '#f59e0b']
+      });
+    }
+  };
+
+  const handleGetStartedClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (scriptLoaded) {
+      triggerConfetti(e.currentTarget);
+      // Navigate to dashboard after confetti animation
+      setTimeout(() => router.push("/"), 900);
+    } else {
+      // If script not loaded, just navigate immediately
+      router.push("/");
+    }
+  };
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
@@ -326,6 +402,7 @@ export default function AboutPage() {
             <Button
               size="lg"
               className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold h-14 px-8 text-base shadow-glow-accent"
+              onClick={handleGetStartedClick}
             >
               Get Started Now
             </Button>
