@@ -8,9 +8,9 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.app",
+  title: "Aphyre - Crypto Dashboard & News",
+  description: "Crypto dashboard and news aggregator for the latest updates in the cryptocurrency world.",
+  generator: "Next.js",
 }
 
 export default function RootLayout({
