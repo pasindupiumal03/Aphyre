@@ -1,132 +1,145 @@
-import { useState, useCallback } from 'react'
+"use client"
 
-export interface WalletBalance {
-  mint: string
-  amount: number
-  decimals: number
-  token?: {
-    name?: string
-    symbol?: string
-    image?: string
-  }
-  logoURI?: string
-  symbol?: string
-  name?: string
-}
+import { useState, useEffect } from "react"
 
-export interface WalletData {
-  balances: {
-    tokens: WalletBalance[]
-    nativeBalance: number
-  }
-  transactions: any[]
-}
-
-export interface ProcessedToken {
+interface TokenData {
   mint: string
   name: string
   symbol: string
-  balance: number
-  logoURI: string
-  rawBalance: number
+  logoURI?: string
   decimals: number
+  uiAmount: number
+  price: number
+  valueUSD: number
 }
 
-export interface WalletSummary {
-  address: string
-  totalValue: string
-  tokenCount: number
-  solBalance: number
-  tokens: ProcessedToken[]
+interface WalletInfo {
+  balance: number // SOL balance
 }
 
-export function useWalletLookup() {
-  const [data, setData] = useState<WalletData | null>(null)
-  const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null)
+interface WalletDataResponse {
+  tokens: Array<{
+    token: {
+      name: string
+      symbol: string
+      mint: string
+      image?: string
+      decimals: number
+    }
+    pools: Array<{
+      price: {
+        usd: number
+      }
+    }>
+    balance: number
+    value: number
+  }>
+  total: number // Total USD value
+  totalSol: number // Total SOL balance
+}
+
+interface UseWalletDataReturn {
+  walletInfo: WalletInfo | null
+  tokensWithPrices: TokenData[]
+  totalValueUSD: number
+  isLoading: boolean
+  error: string | null
+  refetch: () => void
+}
+
+export function useWalletData(walletAddress?: string): UseWalletDataReturn {
+  const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null)
+  const [tokensWithPrices, setTokensWithPrices] = useState<TokenData[]>([])
+  const [totalValueUSD, setTotalValueUSD] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const processTokenData = (balances: WalletData['balances'], address: string): WalletSummary => {
-    const solBalance = balances.nativeBalance / 1e9 // Convert lamports to SOL
-    const tokens: ProcessedToken[] = []
-
-    if (balances.tokens) {
-      balances.tokens.forEach((token) => {
-        const balance = token.amount / Math.pow(10, token.decimals)
-        
-        // Skip tokens with zero balance
-        if (balance > 0) {
-          tokens.push({
-            mint: token.mint,
-            name: token.token?.name || token.name || 'Unknown Token',
-            symbol: token.token?.symbol || token.symbol || 'UNKNOWN',
-            balance: balance,
-            logoURI: token.token?.image || token.logoURI || '',
-            rawBalance: token.amount,
-            decimals: token.decimals
-          })
-        }
-      })
-    }
-
-    // Sort tokens by balance (descending)
-    tokens.sort((a, b) => b.balance - a.balance)
-
-    return {
-      address,
-      totalValue: `$${(solBalance * 150).toFixed(2)}`, // Rough SOL price estimate
-      tokenCount: tokens.length + (solBalance > 0 ? 1 : 0), // Include SOL if balance > 0
-      solBalance: Number(solBalance.toFixed(4)),
-      tokens: tokens.slice(0, 20) // Limit to top 20 tokens
-    }
-  }
-
-  const searchWallet = useCallback(async (address: string) => {
-    if (!address.trim()) {
-      setError('Please enter a wallet address')
-      return
-    }
+  const fetchWalletData = async (address: string) => {
+    if (!address) return
 
     setIsLoading(true)
     setError(null)
-    setData(null)
-    setWalletSummary(null)
 
     try {
-      const response = await fetch(`/api/wallet-lookup?address=${encodeURIComponent(address)}`)
-      
+      const response = await fetch(`/api/wallet/${address}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || `Request failed: ${response.status}`)
       }
 
-      const walletData: WalletData = await response.json()
-      setData(walletData)
-      
-      // Process the data into a more UI-friendly format
-      const summary = processTokenData(walletData.balances, address)
-      setWalletSummary(summary)
-      
+      const data: WalletDataResponse = await response.json()
+
+      // Set wallet info (SOL balance)
+      setWalletInfo({
+        balance: data.totalSol || 0
+      })
+
+      // Transform tokens data
+      const transformedTokens: TokenData[] = data.tokens?.map(tokenData => {
+        const token = tokenData.token
+        // Get price from the first active pool
+        const price = tokenData.pools?.find(pool => pool.price?.usd > 0)?.price?.usd || 0
+        
+        return {
+          mint: token.mint,
+          name: token.name || token.symbol,
+          symbol: token.symbol,
+          logoURI: token.image,
+          decimals: token.decimals,
+          uiAmount: tokenData.balance / Math.pow(10, token.decimals),
+          price: price,
+          valueUSD: tokenData.value || 0
+        }
+      }) || []
+
+      setTokensWithPrices(transformedTokens)
+      setTotalValueUSD(data.total || 0)
+
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+      setError(errorMessage)
       console.error('Error fetching wallet data:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch wallet data')
+      
+      // Reset data on error
+      setWalletInfo(null)
+      setTokensWithPrices([])
+      setTotalValueUSD(0)
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }
 
-  const clearResults = useCallback(() => {
-    setData(null)
-    setWalletSummary(null)
-    setError(null)
-  }, [])
+  const refetch = () => {
+    if (walletAddress) {
+      fetchWalletData(walletAddress)
+    }
+  }
+
+  useEffect(() => {
+    if (walletAddress) {
+      fetchWalletData(walletAddress)
+    } else {
+      // Reset data when no wallet address
+      setWalletInfo(null)
+      setTokensWithPrices([])
+      setTotalValueUSD(0)
+      setError(null)
+    }
+  }, [walletAddress])
 
   return {
-    data,
-    walletSummary,
+    walletInfo,
+    tokensWithPrices,
+    totalValueUSD,
     isLoading,
     error,
-    searchWallet,
-    clearResults
+    refetch
   }
 }
