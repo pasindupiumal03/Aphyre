@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,49 +19,46 @@ import {
   Sparkles,
   Crown,
   Users,
+  Loader2,
+  AlertCircle,
 } from "lucide-react"
-
-const trendingTokens = [
-  {
-    name: "Bonk",
-    symbol: "BONK",
-    price: "$0.00002845",
-    change: "+12.45%",
-    volume: "$145,387,514",
-    icon: "🐕",
-    color: "orange",
-  },
-  {
-    name: "Jupiter",
-    symbol: "JUP",
-    price: "$0.845136",
-    change: "+8.23%",
-    volume: "$89,735,471",
-    icon: "🪐",
-    color: "cyan",
-  },
-  {
-    name: "Pyth Network",
-    symbol: "PYTH",
-    price: "$0.385938",
-    change: "+5.67%",
-    volume: "$45,384,119",
-    icon: "⚡",
-    color: "purple",
-  },
-  {
-    name: "Raydium",
-    symbol: "RAY",
-    price: "$4.562891",
-    change: "+15.89%",
-    volume: "$67,434,864",
-    icon: "🌊",
-    color: "blue",
-  },
-]
+import { useSolanaTracker } from "@/hooks/use-solana-tracker"
 
 export default function SolanaTracker() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [isSearching, setIsSearching] = useState(false)
+  const { data, isLoading, error } = useSolanaTracker()
+  const router = useRouter()
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return
+
+    // Basic Solana address validation (44 characters, base58)
+    const solanaAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
+    
+    if (!solanaAddressRegex.test(searchQuery.trim())) {
+      alert("Please enter a valid Solana token address")
+      return
+    }
+
+    setIsSearching(true)
+    
+    try {
+      // Navigate to the token details page
+      router.push(`/solana-tracker/${searchQuery.trim()}`)
+    } catch (error) {
+      console.error("Navigation error:", error)
+      alert("Error navigating to token details")
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch()
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -203,11 +201,24 @@ export default function SolanaTracker() {
                 placeholder="Enter Solana token address..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
                 className="h-14 pl-12 text-base font-medium bg-secondary/50 border-border"
+                disabled={isSearching}
               />
             </div>
-            <Button className="h-14 px-8 bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold text-base shadow-[0_0_30px_-10px_rgba(192,252,248,0.5)]">
-              Search
+            <Button 
+              onClick={handleSearch}
+              disabled={isSearching || !searchQuery.trim()}
+              className="h-14 px-8 bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold text-base shadow-[0_0_30px_-10px_rgba(192,252,248,0.5)]"
+            >
+              {isSearching ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Searching...
+                </>
+              ) : (
+                "Search"
+              )}
             </Button>
           </div>
         </Card>
@@ -219,26 +230,99 @@ export default function SolanaTracker() {
             <span className="text-accent drop-shadow-[0_0_30px_rgba(216,105,142,0.5)]">(24H)</span>
           </h3>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {trendingTokens.map((token, index) => (
-              <Link key={index} href={`/solana-tracker/${token.symbol.toLowerCase()}`}>
-                <Card className="group cursor-pointer transition-all border-border hover:border-cyan/50 hover:shadow-[0_8px_30px_-12px_rgba(192,252,248,0.3)] p-6 bg-card">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="mb-4 h-20 w-20 rounded-full bg-gradient-to-br from-cyan/20 to-accent/20 flex items-center justify-center text-4xl border-2 border-cyan/30">
-                      {token.icon}
-                    </div>
-                    <h4 className="text-lg font-black mb-1 group-hover:text-cyan transition-colors">{token.name}</h4>
-                    <Badge variant="secondary" className="mb-4 font-bold">
-                      {token.symbol}
-                    </Badge>
-                    <p className="text-2xl font-black text-cyan mb-2">{token.price}</p>
-                    <p className="text-sm font-bold text-green-500 mb-3">{token.change}</p>
-                    <p className="text-xs text-muted-foreground font-medium">Volume: {token.volume}</p>
+          {isLoading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {[...Array(20)].map((_, index) => (
+                <Card key={index} className="p-6 bg-card">
+                  <div className="flex flex-col items-center text-center animate-pulse">
+                    <div className="mb-4 h-20 w-20 rounded-full bg-secondary/50"></div>
+                    <div className="h-4 w-32 bg-secondary/50 rounded mb-2"></div>
+                    <div className="h-3 w-16 bg-secondary/50 rounded mb-4"></div>
+                    <div className="h-6 w-24 bg-secondary/50 rounded mb-2"></div>
+                    <div className="h-3 w-12 bg-secondary/50 rounded mb-3"></div>
+                    <div className="h-3 w-20 bg-secondary/50 rounded"></div>
                   </div>
                 </Card>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : error ? (
+            <Card className="p-8 border-destructive/30 bg-destructive/5">
+              <div className="text-center">
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                <p className="text-destructive font-medium">Error loading trending tokens: {error}</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4" 
+                  onClick={() => window.location.reload()}
+                >
+                  Try Again
+                </Button>
+              </div>
+            </Card>
+          ) : data?.trendingTokens && data.trendingTokens.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {data.trendingTokens.slice(0, 20).map((token, index) => (
+                <Link key={token.address || index} href={`/solana-tracker/${token.address}`}>
+                  <Card className="group cursor-pointer transition-all border-border hover:border-cyan/50 hover:shadow-[0_8px_30px_-12px_rgba(192,252,248,0.3)] p-6 bg-card">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="mb-4 h-20 w-20 rounded-full bg-gradient-to-br from-cyan/20 to-accent/20 flex items-center justify-center text-4xl border-2 border-cyan/30">
+                        {token.logoURI ? (
+                          <img 
+                            src={token.logoURI} 
+                            alt={token.name} 
+                            className="w-12 h-12 rounded-full"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                              const parent = (e.target as HTMLImageElement).parentElement
+                              if (parent) {
+                                parent.innerHTML = token.symbol?.charAt(0) || '?'
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-xl font-bold text-cyan">
+                            {token.symbol?.charAt(0) || '?'}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-lg font-black mb-1 group-hover:text-cyan transition-colors line-clamp-2 h-14 flex items-center">
+                        {token.name || 'Unknown Token'}
+                      </h4>
+                      <Badge variant="secondary" className="mb-4 font-bold">
+                        {token.symbol || 'N/A'}
+                      </Badge>
+                      <p className="text-2xl font-black text-cyan mb-2">
+                        ${token.price ? token.price.toFixed(6) : 'N/A'}
+                      </p>
+                      <p className={`text-sm font-bold mb-3 ${
+                        token.change24h && token.change24h > 0 
+                          ? 'text-green-500' 
+                          : 'text-destructive'
+                      }`}>
+                        {token.change24h 
+                          ? `${token.change24h > 0 ? '+' : ''}${token.change24h.toFixed(2)}%`
+                          : 'N/A'
+                        }
+                      </p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Rank: #{index + 1}
+                      </p>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Card className="p-8 border-muted">
+              <div className="text-center">
+                <Coins className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground font-medium">No trending tokens available at the moment.</p>
+                {data?.trendingTokensError && (
+                  <p className="text-sm text-destructive mt-2">API Error: {data.trendingTokensError}</p>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
       </main>
     </div>
