@@ -21,13 +21,21 @@ interface TopHolder {
   percentage: string
 }
 
+interface RealMetrics {
+  volume24h: number | null
+  marketCap: number | null
+  priceChange24h: number | null
+  lastUpdated: string
+}
+
 interface TokenAnalytics {
-  holderDistribution: HolderDistribution[]
-  acquisitionBreakdown: AcquisitionBreakdown[]
-  topHolders: TopHolder[]
+  holderDistribution: HolderDistribution[] | null
+  acquisitionBreakdown: AcquisitionBreakdown[] | null
+  topHolders: TopHolder[] | null
   totalHolders: number
   totalTransfers: number
   isRealData?: boolean
+  realMetrics?: RealMetrics
 }
 
 export const useTokenAnalytics = (address: string) => {
