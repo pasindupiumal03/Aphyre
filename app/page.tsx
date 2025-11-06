@@ -30,6 +30,7 @@ import { ResponsiveContainer, Line, LineChart, Area, AreaChart, XAxis, YAxis, To
 import { useDashboardNews } from "@/hooks/use-dashboard-news"
 import { useMarketSentiment } from "@/hooks/use-market-sentiment"
 import { useMarketStats } from "@/hooks/use-market-stats"
+import { useFearGreedIndex } from "@/hooks/use-fear-greed-index"
 
 // Mock data
 const marketData = [
@@ -321,14 +322,14 @@ const fundingSizeData = [
 ]
 
 const topInvestorsData = [
-  { name: "Coinbase Ventures", deals: 78, leadDeals: 45, color: "#3b82f6" },
-  { name: "Animoca Brands", deals: 87, leadDeals: 52, color: "#8b5cf6" },
-  { name: "Amber Group", deals: 35, leadDeals: 18, color: "#06b6d4" },
-  { name: "YZi Labs", deals: 35, leadDeals: 20, color: "#10b981" },
-  { name: "GSR", deals: 34, leadDeals: 16, color: "#84cc16" },
-  { name: "Selini Capital", deals: 34, leadDeals: 19, color: "#14b8a6" },
-  { name: "Pantera Capital", deals: 34, leadDeals: 21, color: "#f97316" },
-  { name: "a16z CSX", deals: 33, leadDeals: 17, color: "#ec4899" },
+  { name: "Coinbase Ventures", deals: 78, leadDeals: 45, color: "#3b82f6", logo: "/CoinbaseVentures.png" },
+  { name: "Animoca Brands", deals: 87, leadDeals: 52, color: "#8b5cf6", logo: "/AnimocaBrands.png" },
+  { name: "Amber Group", deals: 35, leadDeals: 18, color: "#06b6d4", logo: "/AmberGroup.png" },
+  { name: "YZi Labs", deals: 35, leadDeals: 20, color: "#10b981", logo: "/YZiLabs.png" },
+  { name: "GSR", deals: 34, leadDeals: 16, color: "#84cc16", logo: "/GSR.png" },
+  { name: "Selini Capital", deals: 34, leadDeals: 19, color: "#14b8a6", logo: "/SeliniCapital.png" },
+  { name: "Pantera Capital", deals: 34, leadDeals: 21, color: "#f97316", logo: "/PanteraCapital.png" },
+  { name: "a16z CSX", deals: 33, leadDeals: 17, color: "#ec4899", logo: "/a16zCSX.png" },
 ]
 
 const investmentLocationsData = [
@@ -368,6 +369,14 @@ export default function Dashboard() {
 
   // Market stats hook (CoinGecko)
   const { statsData, isLoading: statsLoading, error: statsError, refreshStats } = useMarketStats();
+
+  // Fear & Greed Index hook
+  const { 
+    fearGreedData, 
+    isLoading: fearGreedLoading, 
+    error: fearGreedError, 
+    refreshFearGreed 
+  } = useFearGreedIndex();
 
   // Convenience lookups for the four cards
   const marketCapStat = statsData?.find((s) => s.label === "Market Cap");
@@ -683,7 +692,7 @@ export default function Dashboard() {
                             <Activity className="h-5 w-5 text-yellow-500" />
                           )}
                           <span className="text-sm font-bold text-muted-foreground">
-                            Fear: {sentimentData.fearIndex}%
+                            Fear: {fearGreedData?.value || 'N/A'}%
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -765,12 +774,85 @@ export default function Dashboard() {
           </Card>
 
           {/* Fear & Greed Index */}
-          <Card className="col-span-4 p-8 bg-accent text-accent-foreground border border-accent shadow-glow-accent">
-            <div className="mb-4">
-              <h3 className="text-5xl font-black tracking-tighter">{totalCoinsStat ? totalCoinsStat.value : (statsLoading ? "..." : "19,413")}</h3>
-
+          <Card className="col-span-4 p-8 relative overflow-hidden border transition-all bg-card" style={{
+            borderColor: fearGreedData?.color || '#eab308',
+            backgroundColor: `color-mix(in srgb, ${fearGreedData?.color || '#eab308'} 5%, hsl(var(--card)) 95%)`
+          }}>
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl opacity-20" style={{ 
+              backgroundColor: fearGreedData?.color || '#eab308'
+            }} />
+            <div className="relative">
+              <div className="mb-6">
+                <p className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">
+                  Fear & Greed Index
+                </p>
+                {fearGreedLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-12 w-24 bg-muted/30 rounded mb-2"></div>
+                    <div className="h-4 w-32 bg-muted/30 rounded"></div>
+                  </div>
+                ) : fearGreedError && !fearGreedData ? (
+                  <div>
+                    <h3 className="text-5xl font-black tracking-tighter text-muted-foreground mb-2">ERROR</h3>
+                    <p className="text-base font-bold text-muted-foreground">Unable to load</p>
+                  </div>
+                ) : fearGreedData ? (
+                  <div>
+                    <h3 
+                      className="text-5xl font-black tracking-tighter mb-2" 
+                      style={{ color: fearGreedData.color }}
+                    >
+                      {fearGreedData.value}
+                    </h3>
+                    <p 
+                      className="text-base font-bold" 
+                      style={{ color: fearGreedData.color }}
+                    >
+                      {fearGreedData.label}
+                    </p>
+                    {fearGreedData.isFallback && (
+                      <p className="text-xs text-muted-foreground mt-1">Fallback data</p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-5xl font-black tracking-tighter text-muted-foreground mb-2">42</h3>
+                    <p className="text-base font-bold text-muted-foreground">NEUTRAL</p>
+                  </div>
+                )}
+              </div>
+              
+              {fearGreedData && !fearGreedLoading && (
+                <div className="space-y-3">
+                  <div className="h-3 w-full rounded-full bg-muted/30 overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${fearGreedData.value}%`,
+                        backgroundColor: fearGreedData.color,
+                        boxShadow: `0 0 15px -3px ${fearGreedData.color}40`
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground font-medium">
+                      Last Updated: {new Date().toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
+                    <button 
+                      onClick={refreshFearGreed}
+                      className="text-muted-foreground hover:text-accent transition-colors"
+                      disabled={fearGreedLoading}
+                    >
+                      <RefreshCw className={`h-3 w-3 ${fearGreedLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-base font-bold opacity-90">NEUTRAL TERRITORY</p>
           </Card>
 
           {/* Mini Chart Card */}
@@ -1107,11 +1189,20 @@ export default function Dashboard() {
               {topInvestorsData.map((investor, index) => (
                 <div key={index} className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div
-                      className="h-12 w-12 rounded-xl flex items-center justify-center font-black text-white text-xl flex-shrink-0"
-                      style={{ backgroundColor: investor.color }}
-                    >
-                      {investor.name.charAt(0)}
+                    <div className="h-12 w-12 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center p-1.5 border border-accent/20">
+                      <img
+                        src={investor.logo}
+                        alt={`${investor.name} logo`}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          // Fallback to colored letter if logo fails to load
+                          const target = e.target as HTMLImageElement;
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="h-full w-full rounded-xl flex items-center justify-center font-black text-white text-xl" style="background-color: ${investor.color}">${investor.name.charAt(0)}</div>`;
+                          }
+                        }}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-muted-foreground truncate">{investor.name}</p>

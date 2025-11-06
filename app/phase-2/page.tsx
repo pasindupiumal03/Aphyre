@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +18,110 @@ import {
   ArrowRight,
   CheckCircle2,
 } from "lucide-react"
+
+// Confetti type for window.confetti
+type ConfettiOptions = {
+  particleCount?: number;
+  spread?: number;
+  startVelocity?: number;
+  decay?: number;
+  gravity?: number;
+  drift?: number;
+  ticks?: number;
+  origin?: {
+    x?: number;
+    y?: number;
+  };
+  colors?: string[];
+  shapes?: string[];
+  scalar?: number;
+  zIndex?: number;
+  disableForReducedMotion?: boolean;
+};
+
+declare global {
+  interface Window {
+    confetti?: (options?: ConfettiOptions) => void;
+  }
+}
+
+function NewsletterForm() {
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [touched, setTouched] = useState(false)
+  const [scriptLoaded, setScriptLoaded] = useState(false)
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const isValid = emailRegex.test(email)
+
+  // Load confetti script dynamically
+  useEffect(() => {
+    if (!window.confetti) {
+      const script = document.createElement("script");
+      script.src =
+        "https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js";
+      script.async = true;
+      script.onload = () => setScriptLoaded(true);
+      document.body.appendChild(script);
+
+      return () => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+    } else {
+      setScriptLoaded(true);
+    }
+  }, []);
+
+  const triggerConfetti = (buttonElement: HTMLButtonElement) => {
+    if (scriptLoaded && window.confetti && buttonElement) {
+      const rect = buttonElement.getBoundingClientRect();
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+      window.confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { x, y },
+      });
+    }
+  };
+
+  const handleNotifyClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (isValid && scriptLoaded) {
+      triggerConfetti(e.currentTarget);
+      // Navigate to dashboard after confetti animation
+      setTimeout(() => router.push("/"), 900);
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <div className="flex gap-3 max-w-md mx-auto">
+        <Input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onBlur={() => setTouched(true)}
+          placeholder="Enter your email"
+          className="h-14 text-base font-medium bg-background border-2"
+        />
+        <Button 
+          className="bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold h-14 px-8 text-base shadow-[0_0_30px_-10px_rgba(192,252,248,0.5)]"
+          disabled={!isValid}
+          onClick={handleNotifyClick}
+        >
+          Notify Me
+        </Button>
+      </div>
+
+      {touched && !isValid && (
+        <p className="mt-3 text-sm text-red-500 text-center">Please enter a valid email address.</p>
+      )}
+    </div>
+  )
+}
 
 export default function Phase2Page() {
   return (
@@ -85,10 +191,12 @@ export default function Phase2Page() {
                 Get a taste of Phase 2 by exploring our new AI Chat feature. Ask questions about crypto, blockchain, and
                 more.
               </p>
-              <Button className="bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold gap-2 h-12 px-6 shadow-[0_0_30px_-10px_rgba(192,252,248,0.5)]">
-                Explore AI Chat
-                <ArrowRight className="h-5 w-5" />
-              </Button>
+              <Link href="/ai-chat">
+                <Button className="bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold gap-2 h-12 px-6 shadow-[0_0_30px_-10px_rgba(192,252,248,0.5)]">
+                  Explore AI Chat
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </Card>
 
@@ -104,10 +212,12 @@ export default function Phase2Page() {
                 Explore the latest narratives shaping the crypto market. From trending tokens to emerging themes, gain
                 insight into what's driving sentiment.
               </p>
-              <Button className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold gap-2 h-12 px-6 shadow-glow-accent">
-                Explore Narratives
-                <ArrowRight className="h-5 w-5" />
-              </Button>
+              <Link href="/news-sentiment">
+                <Button className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold gap-2 h-12 px-6 shadow-glow-accent">
+                  Explore Narratives
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </Card>
         </div>
@@ -144,12 +254,14 @@ export default function Phase2Page() {
                 <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Seconds</div>
               </div>
             </div>
-            <Button
-              size="lg"
-              className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold h-14 px-8 text-base shadow-glow-accent"
-            >
-              Back to Dashboard
-            </Button>
+            <Link href="/">
+              <Button
+                size="lg"
+                className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold h-14 px-8 text-base shadow-glow-accent"
+              >
+                Back to Dashboard
+              </Button>
+            </Link>
           </div>
         </Card>
 
@@ -167,9 +279,11 @@ export default function Phase2Page() {
               <p className="text-sm text-muted-foreground font-medium mb-4 leading-relaxed">
                 Ask questions about crypto, blockchain, and more. Get instant answers from our AI assistant.
               </p>
-              <Button size="sm" className="bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold">
-                Try Now
-              </Button>
+              <Link href="/ai-chat">
+                <Button size="sm" className="bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold">
+                  Try Now
+                </Button>
+              </Link>
             </Card>
 
             <Card className="border border-accent/30 bg-card p-8">
@@ -193,9 +307,11 @@ export default function Phase2Page() {
               <p className="text-sm text-muted-foreground font-medium mb-4 leading-relaxed">
                 Gain insights into market trends and token stories. Understand what's driving price action.
               </p>
-              <Button size="sm" className="bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold">
-                Try Now
-              </Button>
+              <Link href="/news-sentiment">
+                <Button size="sm" className="bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold">
+                  Try Now
+                </Button>
+              </Link>
             </Card>
 
             <Card className="border border-accent/30 bg-card p-8">
@@ -245,16 +361,7 @@ export default function Phase2Page() {
           <p className="text-lg text-muted-foreground font-medium mb-8 max-w-2xl mx-auto">
             Subscribe to our newsletter to get notified when Phase 2 launches and receive exclusive early access.
           </p>
-          <div className="flex gap-3 max-w-md mx-auto">
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              className="h-14 text-base font-medium bg-background border-2"
-            />
-            <Button className="bg-cyan text-cyan-foreground hover:bg-cyan/90 font-bold h-14 px-8 text-base shadow-[0_0_30px_-10px_rgba(192,252,248,0.5)]">
-              Notify Me
-            </Button>
-          </div>
+          <NewsletterForm />
         </Card>
       </main>
     </div>
