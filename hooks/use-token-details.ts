@@ -18,6 +18,24 @@ interface TokenDetails {
     liquidityScore: number
     overallScore: number
   } | null
+  holderDistribution: Array<{
+    range: string
+    percentage: number
+    holders: number
+  }>
+  topHolders: Array<{
+    rank: number
+    address: string
+    balance: string
+    usdValue: string
+    percentage: number
+  }>
+  acquisitionBreakdown: Array<{
+    method: string
+    count: number
+    color: string
+    percentage: number
+  }>
 }
 
 export const useTokenDetails = (address: string) => {
