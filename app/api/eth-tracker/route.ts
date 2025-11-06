@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
 
 const COINGECKO_URL = 'https://api.coingecko.com/api/v3/coins/ethereum';
 const ETHERSCAN_API_KEY = 'JQC41WVP8KQFAE7HBZ57KEQ739WIG6JA27';
@@ -14,10 +13,12 @@ export async function GET(req: Request) {
 
   try {
     // Get base ETH data and gas prices
-    const ethDataRes = await axios.get(COINGECKO_URL);
-    const ethMarket = ethDataRes.data.market_data;
+    const ethDataRes = await fetch(COINGECKO_URL);
+    const ethDataJson = await ethDataRes.json();
+    const ethMarket = ethDataJson.market_data;
 
-    const gasRes = await axios.get(`${ETHERSCAN_BASE}?module=gastracker&action=gasoracle&apikey=${ETHERSCAN_API_KEY}`);
+    const gasRes = await fetch(`${ETHERSCAN_BASE}?module=gastracker&action=gasoracle&apikey=${ETHERSCAN_API_KEY}`);
+    const gasData = await gasRes.json();
 
     let tokenData = null;
     let trendingTokens = null;
@@ -25,17 +26,13 @@ export async function GET(req: Request) {
     // Get trending tokens
     if (action === 'trending' || !tokenAddress) {
       try {
-        const trendingRes = await axios.get(`${MORALIS_BASE}/tokens/trending`, {
+        const trendingRes = await fetch(`${MORALIS_BASE}/tokens/trending?chain=eth&limit=25`, {
           headers: {
             'X-API-Key': MORALIS_API_KEY,
             'accept': 'application/json'
-          },
-          params: {
-            chain: 'eth',
-            limit: 25
           }
         });
-        trendingTokens = trendingRes.data;
+        trendingTokens = await trendingRes.json();
       } catch (trendingError) {
         console.error('Trending tokens error:', trendingError);
         trendingTokens = [];
@@ -46,40 +43,33 @@ export async function GET(req: Request) {
     if (tokenAddress) {
       try {
         const [tokenInfoRes, tokenPriceRes, tokenStatsRes] = await Promise.all([
-          axios.get(`${MORALIS_BASE}/erc20/metadata`, {
+          fetch(`${MORALIS_BASE}/erc20/metadata?chain=eth&addresses=${tokenAddress}`, {
             headers: {
               'X-API-Key': MORALIS_API_KEY,
               'accept': 'application/json'
-            },
-            params: {
-              chain: 'eth',
-              addresses: [tokenAddress]
             }
           }),
-          axios.get(`${MORALIS_BASE}/erc20/${tokenAddress}/price`, {
+          fetch(`${MORALIS_BASE}/erc20/${tokenAddress}/price?chain=eth&include=percent_change`, {
             headers: {
               'X-API-Key': MORALIS_API_KEY,
               'accept': 'application/json'
-            },
-            params: {
-              chain: 'eth',
-              include: 'percent_change'
             }
           }),
-          axios.get(`${MORALIS_BASE}/erc20/${tokenAddress}/stats`, {
+          fetch(`${MORALIS_BASE}/erc20/${tokenAddress}/stats?chain=eth`, {
             headers: {
               'X-API-Key': MORALIS_API_KEY,
               'accept': 'application/json'
-            },
-            params: {
-              chain: 'eth'
             }
           })
         ]);
 
-        const tokenInfo = tokenInfoRes.data[0];
-        const tokenPrice = tokenPriceRes.data;
-        const tokenStats = tokenStatsRes.data;
+        const tokenInfoData = await tokenInfoRes.json();
+        const tokenPriceData = await tokenPriceRes.json();
+        const tokenStatsData = await tokenStatsRes.json();
+
+        const tokenInfo = tokenInfoData[0];
+        const tokenPrice = tokenPriceData;
+        const tokenStats = tokenStatsData;
 
         tokenData = {
           ...tokenInfo,
@@ -98,7 +88,7 @@ export async function GET(req: Request) {
       price: ethMarket.current_price.usd,
       marketCap: ethMarket.market_cap.usd,
       volume: ethMarket.total_volume.usd,
-      gas: gasRes.data.result,
+      gas: gasData.result,
       tokenData,
       trendingTokens
     });
