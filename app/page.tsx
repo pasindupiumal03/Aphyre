@@ -32,6 +32,7 @@ import { useMarketSentiment } from "@/hooks/use-market-sentiment"
 import { useMarketStats } from "@/hooks/use-market-stats"
 import { useFearGreedIndex } from "@/hooks/use-fear-greed-index"
 import { useMarketCapChart } from "@/hooks/use-market-cap-chart"
+import { Sidebar } from "@/components/sidebar"
 
 // Mock data
 const marketData = [
@@ -435,131 +436,19 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-72 border-r border-border bg-card/50 backdrop-blur-xl p-8">
-        <div className="mb-12">
-          <h1 className="text-3xl font-black tracking-tighter">Aphyre</h1>
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mt-1">
-            TRADING INTELLIGENCE
-          </p>
-        </div>
-
-        <div className="mb-10 rounded-2xl bg-secondary/30 p-5 border border-accent/20">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent shadow-glow-accent">
-              <Coins className="h-6 w-6 text-accent-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-bold">Free Plan</p>
-              <p className="text-xs text-muted-foreground font-medium">Early Access Member</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="space-y-2">
-          <Link href="/">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-bold bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent"
-            >
-              <BarChart3 className="h-5 w-5" />
-              Dashboard
-            </Button>
-          </Link>
-          <Link href="/ai-chat">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <MessageSquare className="h-5 w-5" />
-              AI Chat
-            </Button>
-          </Link>
-          <Link href="/news-sentiment">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <TrendingUp className="h-5 w-5" />
-              News Sentiment
-            </Button>
-          </Link>
-          <Link href="/eth-tracker">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <Coins className="h-5 w-5" />
-              ETH Tracker
-            </Button>
-          </Link>
-          <Link href="/solana-tracker">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <Globe className="h-5 w-5" />
-              Solana Tracker
-            </Button>
-          </Link>
-          <Link href="/wallet-lookup">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <Wallet className="h-5 w-5" />
-              Wallet Lookup
-            </Button>
-          </Link>
-          <div className="pt-4 mt-4 border-t border-border">
-            <Link href="/phase-2">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-              >
-                <Sparkles className="h-5 w-5" />
-                Phase 2
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-              >
-                <Crown className="h-5 w-5" />
-                Pricing
-              </Button>
-            </Link>
-            <Link href="/about">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-              >
-                <Users className="h-5 w-5" />
-                About Us
-              </Button>
-            </Link>
-          </div>
-        </nav>
-
-        <div className="absolute bottom-8 left-8 right-8">
-          <Button className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-base shadow-glow-accent">
-            <Zap className="h-5 w-5 mr-2" />
-            Connect Phantom
-          </Button>
-        </div>
-      </aside>
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-72 p-12">
+      <main className="ml-0 lg:ml-72 p-6 lg:p-12">
         {/* Header */}
-        <div className="mb-12 flex items-start justify-between">
+        <div className="mb-8 lg:mb-12 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="max-w-3xl">
-            <h2 className="mb-4 text-7xl font-black tracking-tighter leading-none text-balance">
+            <h2 className="mb-4 text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter leading-none text-balance">
               MARKET <span className="text-cyan drop-shadow-[0_0_30px_rgba(192,252,248,0.5)]">DASHBOARD</span>
             </h2>
-            <p className="text-xl text-muted-foreground leading-relaxed text-pretty font-medium">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground leading-relaxed text-pretty font-medium">
               Real-time insights and analytics for informed trading decisions.
-              <br />
+              <br className="hidden sm:block" />
               Track market movements and discover opportunities.
             </p>
           </div>
