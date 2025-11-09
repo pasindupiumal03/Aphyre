@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useWallet } from "@solana/wallet-adapter-react"
-import { useWalletModal } from "@solana/wallet-adapter-react-ui"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+import { paymentService } from "@/lib/usdcPayment"
 import {
   Shield,
   Zap,
@@ -27,22 +28,313 @@ import {
   Layers,
   Bot,
   DollarSign,
+  Loader2,
+  Copy,
+  CheckCircle,
+  AlertCircle,
+  CreditCard,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Sidebar } from "@/components/sidebar"
 
+interface Message {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  timestamp: string
+  paymentSignature?: string
+}
+
 export default function X402Page() {
-  const { connected, publicKey } = useWallet()
-  const { setVisible } = useWalletModal()
+  const { connected, publicKey, sendTransaction } = useWallet()
   const router = useRouter()
+  const { toast } = useToast()
+
+  // Chat state
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      content: `Hi! I'm 147.402 Agent, your premium AI coding assistant powered by the X402 payment protocol.
+
+I can help you with:
+- Programming (Python, JavaScript, Rust, Solana, etc.)
+- Code debugging and optimization
+- API integrations and architecture
+- Blockchain development (Solana, Ethereum)
+- HTTP 402 payment implementation
+- DeFi protocol integration
+- And much more!
+
+💰 **Payment System**: Each message costs 0.00001 USDC, paid instantly via Solana.
+
+Ask me any coding question to get started! 🚀`,
+      timestamp: new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+      })
+    },
+  ])
+  
+  const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
+  const [userBalance, setUserBalance] = useState<number>(0)
+  const [sufficientFunds, setSufficientFunds] = useState<boolean>(false)
+
+  // Stats state  
+  const [activities, setActivities] = useState([
+    { agent: "CodeAnalyzer_AI", amount: 0.00001, service: "code review", time: "just now", isNew: true },
+    { agent: "Agent_42x7", amount: 0.00001, service: "API design", time: "2s ago", isNew: false },
+    { agent: "DevBot_v3", amount: 0.00001, service: "debugging help", time: "5s ago", isNew: false },
+    { agent: "ArchitectAI", amount: 0.00001, service: "system design", time: "8s ago", isNew: false },
+  ])
+
+  const [stats, setStats] = useState({
+    apiCalls: 1248267,
+    codeReviews: 4882,
+    activeAgents: 141,
+    earnedUSDC: 4.19,
+  })
 
   // Check wallet connection on page load
   useEffect(() => {
     if (!connected) {
-      // Redirect to home page if wallet not connected
       router.push('/')
     }
   }, [connected, router])
+
+  // Check user balance when wallet connects
+  useEffect(() => {
+    if (connected && publicKey) {
+      checkUserBalance()
+    }
+  }, [connected, publicKey])
+
+  // Simulate real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Update stats
+      setStats((prev) => ({
+        apiCalls: prev.apiCalls + Math.floor(Math.random() * 10),
+        codeReviews: prev.codeReviews + (Math.random() > 0.7 ? 1 : 0),
+        activeAgents: prev.activeAgents + (Math.random() > 0.5 ? 1 : -1),
+        earnedUSDC: prev.earnedUSDC + Math.random() * 0.00001,
+      }))
+
+      // Add new activity
+      const agents = ["APIBuilder_AI", "CodeReview_Bot", "DebugMaster", "SecurityAI", "OptimizAI"]
+      const services = [
+        "code analysis",
+        "API documentation", 
+        "bug detection",
+        "security audit",
+        "performance optimization",
+        "code generation",
+      ]
+      const newActivity = {
+        agent: agents[Math.floor(Math.random() * agents.length)],
+        amount: 0.00001,
+        service: services[Math.floor(Math.random() * services.length)],
+        time: "just now",
+        isNew: true,
+      }
+
+      setActivities((prev) => {
+        const updated = prev.map((a) => ({ ...a, isNew: false }))
+        return [newActivity, ...updated.slice(0, 7)]
+      })
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Check user USDC balance
+  const checkUserBalance = async () => {
+    if (!publicKey) return
+
+    try {
+      const response = await fetch('/api/x402-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: '',
+          walletAddress: publicKey.toBase58(),
+          checkBalance: true
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUserBalance(data.balance || 0)
+        setSufficientFunds(data.sufficientFunds || false)
+      }
+    } catch (error) {
+      console.error('Error checking balance:', error)
+    }
+  }
+
+  // Create and send payment transaction
+  const processPayment = async (): Promise<string | null> => {
+    if (!publicKey || !sendTransaction) {
+      toast({
+        title: "❌ Wallet Error",
+        description: "Please ensure your wallet is connected properly.",
+        id: `wallet-error-${Date.now()}`,
+      })
+      return null
+    }
+
+    try {
+      setIsPaymentProcessing(true)
+
+      // Create payment transaction
+      const paymentResult = await paymentService.createPaymentTransaction({
+        userPublicKey: publicKey,
+        amount: 0.00001,
+        memo: 'X402 Chat Payment'
+      })
+
+      if (!paymentResult.success || !paymentResult.transaction) {
+        throw new Error(paymentResult.error || 'Failed to create payment transaction')
+      }
+
+      // Send transaction
+      const signature = await sendTransaction(paymentResult.transaction, paymentService['connection'])
+      
+      // Wait for confirmation
+      await paymentService['connection'].confirmTransaction(signature, 'confirmed')
+
+      toast({
+        title: "✅ Payment Successful!",
+        description: `Payment of 0.00001 USDC confirmed. Transaction: ${signature.slice(0, 8)}...`,
+        id: `payment-success-${Date.now()}`,
+      })
+
+      // Update balance
+      await checkUserBalance()
+
+      return signature
+    } catch (error: any) {
+      console.error('Payment error:', error)
+      
+      let errorMessage = 'Payment failed. Please try again.'
+      if (error.message?.includes('User rejected')) {
+        errorMessage = 'Payment was cancelled by user.'
+      } else if (error.message?.includes('Insufficient')) {
+        errorMessage = 'Insufficient USDC balance. Please add funds to your wallet.'
+      }
+
+      toast({
+        title: "❌ Payment Failed",
+        description: errorMessage,
+        id: `payment-error-${Date.now()}`,
+      })
+
+      return null
+    } finally {
+      setIsPaymentProcessing(false)
+    }
+  }
+
+  // Send message with payment
+  const handleSend = async () => {
+    if (!input.trim() || isLoading || isPaymentProcessing || !publicKey) return
+
+    const messageText = input.trim()
+    setInput("")
+    setIsLoading(true)
+
+    // Add user message immediately
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user", 
+      content: messageText,
+      timestamp: new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+      })
+    }
+
+    setMessages(prev => [...prev, userMessage])
+
+    try {
+      // Process payment first
+      const paymentSignature = await processPayment()
+      
+      if (!paymentSignature) {
+        // Remove user message if payment failed
+        setMessages(prev => prev.filter(m => m.id !== userMessage.id))
+        return
+      }
+
+      // Send message to AI with payment proof
+      const response = await fetch('/api/x402-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: messageText,
+          conversationHistory: messages,
+          walletAddress: publicKey.toBase58(),
+          paymentSignature
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to get AI response')
+      }
+
+      const data = await response.json()
+      
+      // Add AI response
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.message || "I apologize, but I couldn't process your request. Please try again.",
+        timestamp: new Date().toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false
+        }),
+        paymentSignature
+      }
+
+      setMessages(prev => [...prev, aiMessage])
+      
+      // Update user message with payment signature
+      setMessages(prev => prev.map(m => 
+        m.id === userMessage.id ? { ...m, paymentSignature } : m
+      ))
+
+    } catch (error: any) {
+      console.error('Error sending message:', error)
+      
+      // Remove user message and show error
+      setMessages(prev => prev.filter(m => m.id !== userMessage.id))
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "I'm experiencing technical difficulties. Your payment will be refunded if the issue persists.",
+        timestamp: new Date().toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false
+        })
+      }
+
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Show wallet connection prompt if not connected
   if (!connected) {
@@ -60,106 +352,17 @@ export default function X402Page() {
                 You need to connect your Phantom wallet to access X402 features. Please connect your wallet to continue.
               </p>
               <Button 
-                onClick={() => setVisible(true)}
+                onClick={() => window.location.href = '/'}
                 className="h-12 px-8 bg-accent text-accent-foreground hover:bg-accent/90 font-bold shadow-glow-accent"
               >
                 <Zap className="h-5 w-5 mr-2" />
-                Connect Phantom Wallet
+                Connect Wallet
               </Button>
             </Card>
           </div>
         </main>
       </div>
     )
-  }
-
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content: `Hi! I'm 147.402 Agent, your coding assistant powered by Aphyre.
-
-I can help you with:
-- Programming (any language)
-- Code debugging
-- API integrations  
-- Blockchain development
-- HTTP 402 payments on Solana and BSC
-- And much more!
-
-Ask me anything!`,
-    },
-  ])
-  const [input, setInput] = useState("")
-
-  const [activities, setActivities] = useState([
-    { agent: "RiskManager_AI", amount: 0.0005, service: "portfolio analytics", time: "just now", isNew: true },
-    { agent: "Agent_7x4k2", amount: 0.0001, service: "BTC whale signal", time: "2s ago", isNew: false },
-    { agent: "MarketMaker_AI", amount: 0.00005, service: "orderbook snapshot", time: "5s ago", isNew: false },
-    { agent: "ArbitrageBot_v2", amount: 0.0001, service: "ETH whale alert", time: "8s ago", isNew: false },
-  ])
-
-  const [stats, setStats] = useState({
-    apiCalls: 1248267,
-    whaleSignals: 4882,
-    activeAgents: 141,
-    earnedUSDC: 4.19,
-  })
-
-  useEffect(() => {
-    // Simulate real-time updates
-    const interval = setInterval(() => {
-      // Update stats
-      setStats((prev) => ({
-        apiCalls: prev.apiCalls + Math.floor(Math.random() * 10),
-        whaleSignals: prev.whaleSignals + (Math.random() > 0.7 ? 1 : 0),
-        activeAgents: prev.activeAgents + (Math.random() > 0.5 ? 1 : -1),
-        earnedUSDC: prev.earnedUSDC + Math.random() * 0.01,
-      }))
-
-      // Add new activity
-      const agents = ["TradingBot_AI", "SentimentAnalyzer", "PriceOracle_v3", "LiquidityBot", "MEVGuard_AI"]
-      const services = [
-        "price feed",
-        "sentiment analysis",
-        "liquidity check",
-        "MEV protection",
-        "token analysis",
-        "whale alert",
-      ]
-      const newActivity = {
-        agent: agents[Math.floor(Math.random() * agents.length)],
-        amount: Math.random() * 0.001,
-        service: services[Math.floor(Math.random() * services.length)],
-        time: "just now",
-        isNew: true,
-      }
-
-      setActivities((prev) => {
-        const updated = prev.map((a) => ({ ...a, isNew: false }))
-        return [newActivity, ...updated.slice(0, 7)]
-      })
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  const handleSend = () => {
-    if (!input.trim()) return
-
-    setMessages([...messages, { role: "user", content: input }])
-    setInput("")
-
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "I'm processing your request. This is a demo response. In production, I would provide detailed technical assistance based on your query.",
-        },
-      ])
-    }, 1000)
   }
 
   return (
@@ -171,7 +374,7 @@ Ask me anything!`,
       <main className="ml-72">
         <div className="grid grid-cols-2 h-screen">
           {/* Left Side - x402 Info */}
-          <div className="p-12 overflow-y-auto bg-gradient-to-br from-background via-background to-cyan/5">
+          <div className="p-12 overflow-y-scroll scrollbar-hide bg-gradient-to-br from-background via-background to-cyan/5">
             {/* Header */}
             <div className="mb-12">
               <Badge className="mb-6 bg-cyan/20 text-cyan border-cyan/30 px-6 py-2 text-sm font-bold">
@@ -185,10 +388,28 @@ Ask me anything!`,
                 Payment Layer
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed text-pretty font-medium max-w-2xl">
-                The intelligent API that transforms blockchain data into actionable insights for AI agents. Pay per use
-                with HTTP 402 protocol.
+                The intelligent API that transforms coding challenges into solutions with AI assistance. Pay per use
+                with HTTP 402 protocol on Solana.
               </p>
             </div>
+
+            {/* Balance Display */}
+            <Card className="mb-8 p-6 bg-gradient-to-br from-card to-accent/5 border-accent/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold mb-1">Your USDC Balance</h3>
+                  <p className="text-3xl font-black text-accent">${userBalance.toFixed(6)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground mb-1">Per Message Cost</p>
+                  <p className="text-lg font-bold">$0.00001 USDC</p>
+                  <Badge className={`mt-2 ${sufficientFunds ? 'bg-green-500/20 text-green-500 border-green-500/30' : 'bg-red-500/20 text-red-500 border-red-500/30'}`}>
+                    {sufficientFunds ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
+                    {sufficientFunds ? 'Sufficient Funds' : 'Insufficient Funds'}
+                  </Badge>
+                </div>
+              </div>
+            </Card>
 
             <div className="grid grid-cols-2 gap-4 mb-12">
               <Card className="p-6 bg-gradient-to-br from-cyan/10 to-cyan/5 border-cyan/30">
@@ -205,12 +426,12 @@ Ask me anything!`,
               <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/30">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-green-500" />
+                    <Code2 className="h-5 w-5 text-green-500" />
                     <p className="text-sm font-bold text-green-500">LIVE</p>
                   </div>
                 </div>
-                <p className="text-4xl font-black mb-1">{stats.whaleSignals.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground font-medium">Whale signals detected</p>
+                <p className="text-4xl font-black mb-1">{stats.codeReviews.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground font-medium">Code reviews completed</p>
               </Card>
 
               <Card className="p-6 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/30">
@@ -221,7 +442,7 @@ Ask me anything!`,
                   </div>
                 </div>
                 <p className="text-4xl font-black mb-1">{stats.activeAgents}</p>
-                <p className="text-sm text-muted-foreground font-medium">Autonomous agents connected</p>
+                <p className="text-sm text-muted-foreground font-medium">AI agents connected</p>
               </Card>
 
               <Card className="p-6 bg-gradient-to-br from-cyan/10 to-cyan/5 border-cyan/30">
@@ -231,7 +452,7 @@ Ask me anything!`,
                     <p className="text-sm font-bold text-cyan">USDC</p>
                   </div>
                 </div>
-                <p className="text-4xl font-black mb-1">${stats.earnedUSDC.toFixed(2)}</p>
+                <p className="text-4xl font-black mb-1">${stats.earnedUSDC.toFixed(5)}</p>
                 <p className="text-sm text-muted-foreground font-medium">Earned via x402 (24h)</p>
               </Card>
             </div>
@@ -256,7 +477,7 @@ Ask me anything!`,
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold truncate">
                           {activity.agent} <span className="text-muted-foreground font-normal">paid</span>{" "}
-                          <span className="text-cyan">${activity.amount.toFixed(4)}</span>{" "}
+                          <span className="text-cyan">${activity.amount.toFixed(5)}</span>{" "}
                           <span className="text-muted-foreground font-normal">for</span> {activity.service}
                         </p>
                         <p className="text-xs text-muted-foreground">{activity.time}</p>
@@ -270,22 +491,6 @@ Ask me anything!`,
               </Card>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mb-12">
-              <Card className="p-6 bg-card/50 backdrop-blur border-cyan/30">
-                <p className="text-sm font-bold text-muted-foreground mb-2">Networks</p>
-                <p className="text-4xl font-black text-cyan">90+</p>
-              </Card>
-              <Card className="p-6 bg-card/50 backdrop-blur border-accent/30">
-                <p className="text-sm font-bold text-muted-foreground mb-2">Tokens</p>
-                <p className="text-4xl font-black text-accent">32M+</p>
-              </Card>
-              <Card className="p-6 bg-card/50 backdrop-blur border-border">
-                <p className="text-sm font-bold text-muted-foreground mb-2">Cost/Request</p>
-                <p className="text-4xl font-black">$0.0004</p>
-              </Card>
-            </div>
-
             {/* Features */}
             <div className="space-y-6 mb-12">
               <h3 className="text-3xl font-black mb-6">Core Capabilities</h3>
@@ -293,23 +498,23 @@ Ask me anything!`,
               <Card className="p-6 bg-gradient-to-br from-cyan/10 to-cyan/5 border-cyan/30">
                 <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-xl bg-cyan/20 flex items-center justify-center border border-cyan/30 flex-shrink-0">
-                    <Activity className="h-6 w-6 text-cyan" />
+                    <CreditCard className="h-6 w-6 text-cyan" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-black mb-2">Multi-Chain HTTP 402</h4>
+                    <h4 className="text-xl font-black mb-2">Solana USDC Payments</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Same HTTP 402 protocol works across Solana (USDC/SOL) and BSC (USD1/BNB). Unified payment system
-                      with different blockchain backends.
+                      Pay 0.00001 USDC per message using HTTP 402 protocol. Instant payment verification on Solana 
+                      mainnet with sub-second confirmation times.
                     </p>
                     <div className="flex gap-2 mt-3">
                       <Badge variant="outline" className="text-xs font-bold">
                         Solana
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
-                        BSC
+                        USDC
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
-                        Multi-Chain
+                        Instant
                       </Badge>
                     </div>
                   </div>
@@ -319,20 +524,20 @@ Ask me anything!`,
               <Card className="p-6 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/30">
                 <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-xl bg-accent/20 flex items-center justify-center border border-accent/30 flex-shrink-0">
-                    <Zap className="h-6 w-6 text-accent" />
+                    <Code2 className="h-6 w-6 text-accent" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-black mb-2">Lightning Fast</h4>
+                    <h4 className="text-xl font-black mb-2">AI-Powered Coding</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Sub-second payment verification on Solana (~400ms), under 3s on BSC. Real-time WebSocket updates
-                      for instant confirmation.
+                      Advanced coding assistant powered by GPT-3.5 Turbo. Get help with debugging, architecture, 
+                      API integration, and full-stack development across multiple programming languages.
                     </p>
                     <div className="flex gap-2 mt-3">
                       <Badge variant="outline" className="text-xs font-bold">
-                        {"<400ms"}
+                        GPT-3.5
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
-                        WebSocket
+                        Multi-Language
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
                         Real-time
@@ -345,23 +550,23 @@ Ask me anything!`,
               <Card className="p-6 bg-card/50 backdrop-blur border-border">
                 <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center border border-border flex-shrink-0">
-                    <Code2 className="h-6 w-6" />
+                    <Shield className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-black mb-2">Developer Friendly</h4>
+                    <h4 className="text-xl font-black mb-2">Secure & Private</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Simple REST API, SDK support, comprehensive documentation. Works with standard HTTP clients and
-                      147.402 protocol libraries.
+                      All payments are verified on-chain. Your conversations are private and secure. No subscription 
+                      fees - pay only for what you use with transparent micro-transactions.
                     </p>
                     <div className="flex gap-2 mt-3">
                       <Badge variant="outline" className="text-xs font-bold">
-                        REST API
+                        On-Chain
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
-                        SDK
+                        Private
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
-                        Docs
+                        Pay-per-use
                       </Badge>
                     </div>
                   </div>
@@ -374,20 +579,20 @@ Ask me anything!`,
                     <Layers className="h-6 w-6 text-cyan" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-black mb-2">Cross-Chain Payments</h4>
+                    <h4 className="text-xl font-black mb-2">Blockchain Development</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Pay on one chain, use funds on another. Powered by Wormhole, LayerZero, and Stargate bridges.
-                      Automatic routing optimization.
+                      Specialized assistance for blockchain development including Solana programs, Ethereum smart contracts, 
+                      DeFi protocols, and Web3 integration patterns.
                     </p>
                     <div className="flex gap-2 mt-3">
                       <Badge variant="outline" className="text-xs font-bold">
-                        Wormhole
+                        Solana
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
-                        LayerZero
+                        Ethereum
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
-                        Bridge
+                        DeFi
                       </Badge>
                     </div>
                   </div>
@@ -402,23 +607,23 @@ Ask me anything!`,
                 {[
                   {
                     step: "1",
-                    title: "API responds with HTTP 402",
-                    desc: "Server returns payment-required status with instructions",
+                    title: "Send your coding question",
+                    desc: "Type any programming question or paste your code for review",
                   },
                   {
-                    step: "2",
-                    title: "Client sends payment",
-                    desc: "Transaction on Solana or BSC with payment memo",
+                    step: "2", 
+                    title: "Automatic USDC payment",
+                    desc: "0.00001 USDC is charged and verified on Solana blockchain",
                   },
                   {
                     step: "3",
-                    title: "Payment verified",
-                    desc: "On-chain verification or custom observer confirms",
+                    title: "AI processes your request",
+                    desc: "Advanced AI analyzes your question and generates detailed response",
                   },
                   {
                     step: "4",
-                    title: "API grants access",
-                    desc: "Client retries request with payment proof headers",
+                    title: "Receive expert assistance",
+                    desc: "Get detailed code solutions, debugging help, and best practices",
                   },
                 ].map((item, index) => (
                   <div key={index} className="flex items-start gap-4">
@@ -435,30 +640,36 @@ Ask me anything!`,
               </div>
             </div>
 
-            {/* API Endpoints */}
+            {/* Recipient Address */}
             <div>
-              <h3 className="text-3xl font-black mb-6">API Endpoints</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { method: "GET", endpoint: "/health", desc: "Service status" },
-                  { method: "POST", endpoint: "/payment/request", desc: "Create payment" },
-                  { method: "POST", endpoint: "/payment/verify", desc: "Verify transaction" },
-                  { method: "GET", endpoint: "/payment/:id", desc: "Payment status" },
-                  { method: "GET", endpoint: "/metrics", desc: "Service metrics" },
-                  { method: "WS", endpoint: "/ws", desc: "Real-time updates" },
-                ].map((item, index) => (
-                  <Card
-                    key={index}
-                    className="p-4 bg-card/50 backdrop-blur border-border hover:border-cyan/50 transition-all"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge className="bg-cyan/20 text-cyan border-cyan/30 font-bold text-xs">{item.method}</Badge>
-                      <code className="text-sm font-bold">{item.endpoint}</code>
+              <h3 className="text-3xl font-black mb-6">Payment Details</h3>
+              <Card className="p-6 bg-card/50 backdrop-blur border-border">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-bold text-muted-foreground mb-2">Recipient Address:</p>
+                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                      <code className="text-sm font-mono flex-1">Aphyre1111111111111111111111111111111111111</code>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => navigator.clipboard.writeText('Aphyre1111111111111111111111111111111111111')}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">{item.desc}</p>
-                  </Card>
-                ))}
-              </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-bold text-muted-foreground mb-1">Network:</p>
+                      <p className="text-sm">Solana Mainnet</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-muted-foreground mb-1">Token:</p>
+                      <p className="text-sm">USDC</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
             </div>
           </div>
 
@@ -472,7 +683,7 @@ Ask me anything!`,
                 </div>
                 <div>
                   <h2 className="text-2xl font-black">147.402 Agent</h2>
-                  <p className="text-sm text-muted-foreground font-medium">Your AI coding assistant</p>
+                  <p className="text-sm text-muted-foreground font-medium">AI Coding Assistant • $0.00001 USDC per message</p>
                 </div>
                 <div className="ml-auto">
                   <div className="flex items-center gap-2">
@@ -484,7 +695,7 @@ Ask me anything!`,
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
+            <div className="flex-1 overflow-y-scroll scrollbar-hide p-8 space-y-6">
               {messages.map((message, index) => (
                 <div key={index} className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                   {message.role === "assistant" && (
@@ -499,7 +710,25 @@ Ask me anything!`,
                         : "bg-card border-border"
                     }`}
                   >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs text-muted-foreground font-medium">
+                        {message.role === "user" ? "You" : "147.402 Agent"} • {message.timestamp}
+                      </span>
+                      {message.paymentSignature && (
+                        <Badge className="bg-green-500/20 text-green-500 border-green-500/30 text-xs">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Paid
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{message.content}</p>
+                    {message.paymentSignature && (
+                      <div className="mt-2 pt-2 border-t border-border/50">
+                        <p className="text-xs text-muted-foreground font-mono">
+                          Tx: {message.paymentSignature.slice(0, 8)}...{message.paymentSignature.slice(-8)}
+                        </p>
+                      </div>
+                    )}
                   </Card>
                   {message.role === "user" && (
                     <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
@@ -508,29 +737,58 @@ Ask me anything!`,
                   )}
                 </div>
               ))}
+
+              {/* Loading indicator */}
+              {(isLoading || isPaymentProcessing) && (
+                <div className="flex gap-4 justify-start">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-cyan flex items-center justify-center flex-shrink-0 shadow-glow-accent">
+                    <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  </div>
+                  <Card className="max-w-2xl p-4 bg-card border-border">
+                    <p className="text-sm leading-relaxed font-medium text-muted-foreground">
+                      {isPaymentProcessing ? "Processing payment..." : "Generating response..."}
+                    </p>
+                  </Card>
+                </div>
+              )}
             </div>
 
             {/* Chat Input */}
             <div className="p-8 border-t border-border bg-card/50 backdrop-blur">
               <div className="flex gap-4">
                 <Input
-                  placeholder="Ask about HTTP 402, blockchain integration, or any coding question..."
+                  placeholder="Ask about coding, debugging, blockchain development, or any technical question..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSend()}
+                  onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                  disabled={isLoading || isPaymentProcessing || !sufficientFunds}
                   className="flex-1 h-14 px-6 text-base border-2 focus:border-accent"
                 />
                 <Button
                   onClick={handleSend}
+                  disabled={!input.trim() || isLoading || isPaymentProcessing || !sufficientFunds}
                   size="lg"
-                  className="h-14 px-8 bg-accent text-accent-foreground hover:bg-accent/90 font-bold shadow-glow-accent"
+                  className="h-14 px-8 bg-accent text-accent-foreground hover:bg-accent/90 font-bold shadow-glow-accent disabled:opacity-50"
                 >
-                  <Send className="h-5 w-5" />
+                  {isLoading || isPaymentProcessing ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-3 text-center font-medium">
-                Powered by Aphyre AI • Ask me about HTTP 402 payments, blockchain development, and more
-              </p>
+              <div className="flex justify-between items-center mt-3">
+                <p className="text-xs text-muted-foreground font-medium">
+                  {!sufficientFunds ? (
+                    <span className="text-red-500 font-bold">⚠️ Insufficient USDC balance. Please add funds to continue.</span>
+                  ) : (
+                    <span>💳 Each message costs 0.00001 USDC • Balance: ${userBalance.toFixed(6)}</span>
+                  )}
+                </p>
+                <Badge variant="secondary" className="font-bold text-xs">
+                  {isPaymentProcessing ? 'Processing Payment...' : isLoading ? 'AI Thinking...' : 'Ready'}
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
