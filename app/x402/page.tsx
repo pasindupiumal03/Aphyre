@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import { useWallet } from "@solana/wallet-adapter-react"
+import { useWallet, useConnection } from "@solana/wallet-adapter-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { paymentService } from "@/lib/usdcPayment"
@@ -47,6 +47,7 @@ interface Message {
 
 export default function X402Page() {
   const { connected, publicKey, sendTransaction } = useWallet()
+  const { connection } = useConnection()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -152,28 +153,56 @@ Ask me any coding question to get started! 🚀`,
 
   // Check user USDC balance
   const checkUserBalance = async () => {
-    if (!publicKey) return
+    if (!publicKey) {
+      setUserBalance(0)
+      setSufficientFunds(false)
+      return
+    }
 
     try {
-      const response = await fetch('/api/x402-chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: '',
-          walletAddress: publicKey.toBase58(),
-          checkBalance: true
-        }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setUserBalance(data.balance || 0)
-        setSufficientFunds(data.sufficientFunds || false)
+      console.log('Checking balance for wallet:', publicKey.toBase58())
+      
+      // Direct balance check using payment service
+      const balance = await paymentService.getUserUSDCBalance(publicKey)
+      const hasSufficientFunds = await paymentService.checkSufficientFunds(publicKey)
+      
+      console.log('USDC Balance:', balance, 'Sufficient funds:', hasSufficientFunds)
+      
+      setUserBalance(balance)
+      setSufficientFunds(hasSufficientFunds)
+      
+      if (balance === 0) {
+        // Debug: Check what tokens the user has
+        const allAccounts = await (paymentService as any).getAllUserTokenAccounts(publicKey)
+        console.log('User token accounts:', allAccounts)
+        
+        toast({
+          title: "💰 USDC Balance Check",
+          description: "No USDC balance found. Please ensure you have USDC tokens in your Phantom wallet. You may need to receive USDC first to create your token account.",
+          id: `balance-check-${Date.now()}`,
+        })
+      } else if (balance > 0 && balance < 0.00001) {
+        toast({
+          title: "⚠️ Insufficient USDC",
+          description: `You have ${balance.toFixed(6)} USDC but need at least 0.00001 USDC per message.`,
+          id: `insufficient-${Date.now()}`,
+        })
+      } else {
+        toast({
+          title: "✅ USDC Balance Loaded",
+          description: `You have ${balance.toFixed(6)} USDC available for chat. Each message costs 0.00001 USDC.`,
+          id: `balance-success-${Date.now()}`,
+        })
       }
     } catch (error) {
       console.error('Error checking balance:', error)
+      setUserBalance(0)
+      setSufficientFunds(false)
+      toast({
+        title: "⚠️ Balance Check Failed",
+        description: "Unable to check USDC balance. Please ensure your wallet is connected and try again.",
+        id: `balance-error-${Date.now()}`,
+      })
     }
   }
 
@@ -181,7 +210,7 @@ Ask me any coding question to get started! 🚀`,
   const processPayment = async (): Promise<string | null> => {
     if (!publicKey || !sendTransaction) {
       toast({
-        title: "❌ Wallet Error",
+        title: "❌ Wallet Error", 
         description: "Please ensure your wallet is connected properly.",
         id: `wallet-error-${Date.now()}`,
       })
@@ -190,6 +219,11 @@ Ask me any coding question to get started! 🚀`,
 
     try {
       setIsPaymentProcessing(true)
+
+      console.log('Starting payment process...')
+      console.log('Wallet connected:', !!publicKey)
+      console.log('Send transaction available:', !!sendTransaction)
+      console.log('Connection available:', !!connection)
 
       // Create payment transaction
       const paymentResult = await paymentService.createPaymentTransaction({
@@ -202,11 +236,17 @@ Ask me any coding question to get started! 🚀`,
         throw new Error(paymentResult.error || 'Failed to create payment transaction')
       }
 
-      // Send transaction
-      const signature = await sendTransaction(paymentResult.transaction, paymentService['connection'])
+      console.log('Payment transaction created, requesting signature from wallet...')
+
+      // Send transaction - this should open Phantom wallet
+      const signature = await sendTransaction(paymentResult.transaction, connection)
+      
+      console.log('Payment transaction sent with signature:', signature)
       
       // Wait for confirmation
-      await paymentService['connection'].confirmTransaction(signature, 'confirmed')
+      await connection.confirmTransaction(signature, 'confirmed')
+
+      console.log('Payment transaction confirmed:', signature)
 
       toast({
         title: "✅ Payment Successful!",
@@ -288,7 +328,8 @@ Ask me any coding question to get started! 🚀`,
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to get AI response')
+        console.error('API Error:', errorData)
+        throw new Error(errorData.error || errorData.message || 'Failed to get AI response')
       }
 
       const data = await response.json()
@@ -648,11 +689,11 @@ Ask me any coding question to get started! 🚀`,
                   <div>
                     <p className="text-sm font-bold text-muted-foreground mb-2">Recipient Address:</p>
                     <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                      <code className="text-sm font-mono flex-1">Aphyre1111111111111111111111111111111111111</code>
+                      <code className="text-sm font-mono flex-1">6yK1zeAnkqAe1fBP5Kk773EUm8taJvAsSxnMcYCSzhSL</code>
                       <Button 
                         size="sm" 
                         variant="ghost"
-                        onClick={() => navigator.clipboard.writeText('Aphyre1111111111111111111111111111111111111')}
+                        onClick={() => navigator.clipboard.writeText('6yK1zeAnkqAe1fBP5Kk773EUm8taJvAsSxnMcYCSzhSL')}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -780,7 +821,7 @@ Ask me any coding question to get started! 🚀`,
               <div className="flex justify-between items-center mt-3">
                 <p className="text-xs text-muted-foreground font-medium">
                   {!sufficientFunds ? (
-                    <span className="text-red-500 font-bold">⚠️ Insufficient USDC balance. Please add funds to continue.</span>
+                    <span className="text-red-500 font-bold">⚠️ Insufficient USDC balance. Please add USDC to your Phantom wallet to continue. You need at least 0.00001 USDC per message.</span>
                   ) : (
                     <span>💳 Each message costs 0.00001 USDC • Balance: ${userBalance.toFixed(6)}</span>
                   )}

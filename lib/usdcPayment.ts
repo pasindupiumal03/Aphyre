@@ -3,7 +3,7 @@ import { getAssociatedTokenAddress, createTransferInstruction, TOKEN_PROGRAM_ID 
 
 // Constants
 const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC mint address on Solana mainnet
-const RECIPIENT_ADDRESS = new PublicKey('Aphyre1111111111111111111111111111111111111'); // Aphyre recipient address (44 chars)
+const RECIPIENT_ADDRESS = new PublicKey('6yK1zeAnkqAe1fBP5Kk773EUm8taJvAsSxnMcYCSzhSL'); // Valid recipient address
 const RPC_ENDPOINT = 'https://rpc-mainnet.solanatracker.io/?api_key=8b90bec5-e575-4212-9c39-4e2496f29a2f';
 const PAYMENT_AMOUNT = 0.00001; // 0.00001 USDC per chat
 
@@ -34,6 +34,10 @@ export class USDCPaymentService {
     memo = 'X402 Chat Payment'
   }: PaymentRequest): Promise<PaymentResult> {
     try {
+      console.log('Creating payment transaction for:', userPublicKey.toBase58());
+      console.log('Amount:', amount, 'USDC');
+      console.log('Recipient:', RECIPIENT_ADDRESS.toBase58());
+
       // Get user's USDC token account
       const userUSDCAccount = await getAssociatedTokenAddress(
         USDC_MINT,
@@ -46,6 +50,9 @@ export class USDCPaymentService {
         RECIPIENT_ADDRESS
       );
 
+      console.log('User USDC account:', userUSDCAccount.toBase58());
+      console.log('Recipient USDC account:', recipientUSDCAccount.toBase58());
+
       // Check if accounts exist
       const userAccountInfo = await this.connection.getAccountInfo(userUSDCAccount);
       if (!userAccountInfo) {
@@ -57,14 +64,14 @@ export class USDCPaymentService {
 
       const recipientAccountInfo = await this.connection.getAccountInfo(recipientUSDCAccount);
       if (!recipientAccountInfo) {
-        return {
-          success: false,
-          error: 'Recipient USDC token account does not exist.'
-        };
+        console.log('Recipient USDC token account does not exist, but continuing...');
+        // Note: In production, you might want to create the recipient account
+        // For now, we'll continue and let the transaction fail if needed
       }
 
       // Convert amount to smallest unit (USDC has 6 decimals)
       const transferAmount = Math.floor(amount * 1_000_000);
+      console.log('Transfer amount (in smallest units):', transferAmount);
 
       // Create transaction
       const transaction = new Transaction();
@@ -96,6 +103,8 @@ export class USDCPaymentService {
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = userPublicKey;
 
+      console.log('Transaction created successfully');
+
       return {
         success: true,
         transaction
@@ -112,16 +121,25 @@ export class USDCPaymentService {
   // Verify a payment transaction
   async verifyPayment(signature: string): Promise<boolean> {
     try {
+      console.log('Verifying payment signature:', signature);
+      
       const transaction = await this.connection.getTransaction(signature, {
-        commitment: 'confirmed'
+        commitment: 'confirmed',
+        maxSupportedTransactionVersion: 0
       });
 
       if (!transaction || transaction.meta?.err) {
+        console.log('Transaction not found or failed:', transaction?.meta?.err);
         return false;
       }
 
-      // Additional verification can be added here
-      // e.g., check transfer amount, recipient, etc.
+      console.log('Transaction found, verification complete');
+      
+      // For now, just check if transaction exists and succeeded
+      // In production, you would verify:
+      // - Transfer amount matches expected amount
+      // - Transfer recipient matches expected recipient
+      // - Transfer token mint matches USDC
       return true;
     } catch (error) {
       console.error('Error verifying payment:', error);
@@ -132,13 +150,52 @@ export class USDCPaymentService {
   // Get user's USDC balance
   async getUserUSDCBalance(userPublicKey: PublicKey): Promise<number> {
     try {
+      console.log('Checking USDC balance for:', userPublicKey.toBase58());
+      
       const userUSDCAccount = await getAssociatedTokenAddress(
         USDC_MINT,
         userPublicKey
       );
 
+      console.log('Expected USDC token account:', userUSDCAccount.toBase58());
+
+      // Check if the token account exists
+      const accountInfo = await this.connection.getAccountInfo(userUSDCAccount);
+      if (!accountInfo) {
+        console.log('USDC token account not found for user. User may need to create one first.');
+        
+        // Check if user has any token accounts at all
+        const tokenAccounts = await this.connection.getTokenAccountsByOwner(userPublicKey, {
+          programId: TOKEN_PROGRAM_ID,
+        });
+        
+        console.log(`User has ${tokenAccounts.value.length} token accounts`);
+        
+        if (tokenAccounts.value.length > 0) {
+          console.log('Available token accounts:');
+          for (const account of tokenAccounts.value) {
+            try {
+              const balance = await this.connection.getTokenAccountBalance(account.pubkey);
+              console.log(`Account: ${account.pubkey.toBase58()}, Balance: ${balance.value.uiAmount} ${balance.value.uiAmountString}`);
+            } catch (error) {
+              console.log(`Account: ${account.pubkey.toBase58()}, Error getting balance:`, error);
+            }
+          }
+        }
+        
+        return 0;
+      }
+
       const balance = await this.connection.getTokenAccountBalance(userUSDCAccount);
-      return parseFloat(balance.value.uiAmount?.toString() || '0');
+      const uiAmount = balance.value.uiAmount;
+      
+      console.log('USDC balance result:', balance.value);
+      
+      if (uiAmount === null || uiAmount === undefined) {
+        return 0;
+      }
+      
+      return parseFloat(uiAmount.toString());
     } catch (error) {
       console.error('Error getting USDC balance:', error);
       return 0;
@@ -149,6 +206,39 @@ export class USDCPaymentService {
   async checkSufficientFunds(userPublicKey: PublicKey, amount: number = PAYMENT_AMOUNT): Promise<boolean> {
     const balance = await this.getUserUSDCBalance(userPublicKey);
     return balance >= amount;
+  }
+
+  // Helper function to get all user's token accounts for debugging
+  async getAllUserTokenAccounts(userPublicKey: PublicKey): Promise<any[]> {
+    try {
+      const tokenAccounts = await this.connection.getTokenAccountsByOwner(userPublicKey, {
+        programId: TOKEN_PROGRAM_ID,
+      });
+
+      const accounts = [];
+      for (const account of tokenAccounts.value) {
+        try {
+          const balance = await this.connection.getTokenAccountBalance(account.pubkey);
+          const accountInfo = await this.connection.getParsedAccountInfo(account.pubkey);
+          const parsedData = accountInfo.value?.data;
+          
+          accounts.push({
+            address: account.pubkey.toBase58(),
+            balance: balance.value,
+            mint: (parsedData && typeof parsedData === 'object' && 'parsed' in parsedData) 
+              ? parsedData.parsed?.info?.mint || 'Unknown'
+              : 'Unknown',
+          });
+        } catch (error) {
+          console.log(`Error getting account info for ${account.pubkey.toBase58()}:`, error);
+        }
+      }
+      
+      return accounts;
+    } catch (error) {
+      console.error('Error getting token accounts:', error);
+      return [];
+    }
   }
 }
 

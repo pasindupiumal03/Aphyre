@@ -25,14 +25,11 @@ export function WalletProvider({ children }: WalletProviderProps) {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
+  // Always render the providers, but handle SSR gracefully
   return (
     <ConnectionProvider endpoint={endpoint}>
       <SolanaWalletProvider wallets={wallets} autoConnect={false}>
-        {children}
+        {mounted ? children : <div suppressHydrationWarning>{children}</div>}
       </SolanaWalletProvider>
     </ConnectionProvider>
   );
