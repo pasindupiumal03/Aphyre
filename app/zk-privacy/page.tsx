@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Shield,
   Lock,
@@ -31,6 +32,72 @@ export default function ZKPrivacyPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [isEnabling, setIsEnabling] = useState(false)
   const [isEnabled, setIsEnabled] = useState(false)
+  const router = useRouter()
+
+  // Confetti animation function
+  const createConfetti = () => {
+    const confettiCount = 100
+    const confetti = []
+
+    for (let i = 0; i < confettiCount; i++) {
+      const confettiElement = document.createElement('div')
+      confettiElement.className = 'confetti-piece'
+      confettiElement.style.cssText = `
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background: ${['#D8698E', '#C0FCF8', '#EAD0D9'][Math.floor(Math.random() * 3)]};
+        top: -10px;
+        left: ${Math.random() * 100}%;
+        transform: rotate(${Math.random() * 360}deg);
+        animation: confetti-fall ${2 + Math.random() * 3}s linear forwards;
+        z-index: 9999;
+        pointer-events: none;
+        border-radius: 2px;
+      `
+      document.body.appendChild(confettiElement)
+      confetti.push(confettiElement)
+    }
+
+    // Add CSS animation if not already added
+    if (!document.getElementById('confetti-styles')) {
+      const style = document.createElement('style')
+      style.id = 'confetti-styles'
+      style.textContent = `
+        @keyframes confetti-fall {
+          0% {
+            transform: translateY(-100vh) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+      `
+      document.head.appendChild(style)
+    }
+
+    // Clean up confetti after animation
+    setTimeout(() => {
+      confetti.forEach(piece => {
+        if (piece.parentNode) {
+          piece.parentNode.removeChild(piece)
+        }
+      })
+    }, 5000)
+  }
+
+  const handleGetStarted = () => {
+    createConfetti()
+    setTimeout(() => {
+      router.push('/')
+    }, 1000)
+  }
+
+  const handleContactSales = () => {
+    router.push('/pricing')
+  }
 
   const handleEnableZK = () => {
     setIsEnabling(true)
@@ -508,12 +575,18 @@ export default function ZKPrivacyPage() {
             <div className="flex gap-4 justify-center">
               <Button
                 size="lg"
+                onClick={handleGetStarted}
                 className="h-16 px-10 text-lg font-bold bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent"
               >
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="h-16 px-10 text-lg font-bold border-2 bg-transparent">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={handleContactSales}
+                className="h-16 px-10 text-lg font-bold border-2 bg-transparent"
+              >
                 Contact Sales
               </Button>
             </div>
