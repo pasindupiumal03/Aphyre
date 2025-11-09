@@ -17,6 +17,7 @@ import {
   Zap,
   Menu,
   X,
+  Shield,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -28,8 +29,9 @@ export function Sidebar({ className }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const isActive = (path: string) => {
+    if (!pathname) return false
     if (path === "/" && pathname === "/") return true
-    if (path !== "/" && pathname?.startsWith(path)) return true
+    if (path !== "/" && (pathname === path || pathname.startsWith(path + "/"))) return true
     return false
   }
 
@@ -151,7 +153,25 @@ export function Sidebar({ className }: SidebarProps) {
                 Wallet Lookup
               </Button>
             </Link>
+            <Link href="/x402" onClick={closeMobileMenu}>
+              <Button
+                variant="ghost"
+                className={getButtonClasses("/x402")}
+              >
+                <Zap className="h-5 w-5" />
+                X402
+              </Button>
+            </Link>
             <div className="pt-4 mt-4 border-t border-border">
+              <Link href="/zk-privacy" onClick={closeMobileMenu}>
+                <Button
+                  variant="ghost"
+                  className={getButtonClasses("/zk-privacy")}
+                >
+                  <Shield className="h-5 w-5" />
+                  ZK-Privacy
+                </Button>
+              </Link>
               <Link href="/phase-2" onClick={closeMobileMenu}>
                 <Button
                   variant="ghost"
