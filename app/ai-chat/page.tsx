@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Sidebar } from "@/components/sidebar"
 import {
   TrendingUp,
   BarChart3,
@@ -171,103 +172,21 @@ export default function AIChat() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-72 border-r border-border bg-card/50 backdrop-blur-xl p-8">
-        <div className="mb-12">
-          <h1 className="text-3xl font-black tracking-tighter">Aphyre</h1>
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mt-1">
-            TRADING INTELLIGENCE
-          </p>
-        </div>
-
-        <div className="mb-10 rounded-2xl bg-secondary/30 p-5 border border-accent/20">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent shadow-glow-accent">
-              <Coins className="h-6 w-6 text-accent-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-bold">Free Plan</p>
-              <p className="text-xs text-muted-foreground font-medium">Early Access Member</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="space-y-2">
-          <Link href="/">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <BarChart3 className="h-5 w-5" />
-              Dashboard
-            </Button>
-          </Link>
-          <Link href="/ai-chat">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-bold bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent"
-            >
-              <MessageSquare className="h-5 w-5" />
-              AI Chat
-            </Button>
-          </Link>
-          <Link href="/news-sentiment">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <TrendingUp className="h-5 w-5" />
-              News Sentiment
-            </Button>
-          </Link>
-          <Link href="/eth-tracker">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <Coins className="h-5 w-5" />
-              ETH Tracker
-            </Button>
-          </Link>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-          >
-            <Globe className="h-5 w-5" />
-            Solana Eco
-          </Button>
-          <Link href="/wallet-lookup">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <Wallet className="h-5 w-5" />
-              Wallet Lookup
-            </Button>
-          </Link>
-        </nav>
-
-        <div className="absolute bottom-8 left-8 right-8">
-          <Button className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-base shadow-glow-accent">
-            <Zap className="h-5 w-5 mr-2" />
-            Connect Phantom
-          </Button>
-        </div>
-      </aside>
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-72 p-12 flex flex-col h-screen">
+      <main className="ml-0 lg:ml-72 p-6 lg:p-12 flex flex-col h-screen">
         {/* Header */}
-        <div className="mb-8 flex items-start justify-between">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
-            <h2 className="mb-2 text-6xl font-black tracking-tighter leading-none">
+            <h2 className="mb-2 text-4xl sm:text-6xl font-black tracking-tighter leading-none">
               AI <span className="text-accent drop-shadow-[0_0_30px_rgba(216,105,142,0.5)]">TRADING</span>
             </h2>
-            <p className="text-lg text-muted-foreground font-medium">
+            <p className="text-base sm:text-lg text-muted-foreground font-medium">
               Advanced AI assistant for crypto analysis and trading insights.
             </p>
           </div>
-          <Badge className="bg-green-500/20 text-green-500 border-green-500/30 font-bold px-4 py-2">
+          <Badge className="bg-green-500/20 text-green-500 border-green-500/30 font-bold px-4 py-2 self-start">
             <div className="h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse" />
             AI Online
           </Badge>

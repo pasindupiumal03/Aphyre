@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { BarChart3, Check, X, Crown } from "lucide-react"
 import { useState } from "react"
+import { Sidebar } from "@/components/sidebar"
 
 const pricingPlans = [
   {
@@ -95,39 +96,10 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-72 border-r border-border bg-card/50 backdrop-blur-xl p-8">
-        <div className="mb-12">
-          <h1 className="text-3xl font-black tracking-tighter">Aphyre</h1>
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mt-1">
-            TRADING INTELLIGENCE
-          </p>
-        </div>
-
-        <nav className="space-y-2">
-          <Link href="/">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-semibold hover:bg-secondary/30 text-foreground"
-            >
-              <BarChart3 className="h-5 w-5" />
-              Dashboard
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base font-bold bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent"
-            >
-              <Crown className="h-5 w-5" />
-              Pricing
-            </Button>
-          </Link>
-        </nav>
-      </aside>
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-72 p-12">
+      <main className="ml-0 lg:ml-72 p-6 lg:p-12">
         {/* Header */}
         <div className="mb-16 text-center max-w-4xl mx-auto">
           <Badge className="mb-6 bg-green-500/20 text-green-500 border-green-500/30 px-6 py-2 text-sm font-bold">
