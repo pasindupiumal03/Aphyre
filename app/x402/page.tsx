@@ -5,6 +5,9 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { useWallet } from "@solana/wallet-adapter-react"
+import { useWalletModal } from "@solana/wallet-adapter-react-ui"
+import { useRouter } from "next/navigation"
 import {
   Shield,
   Zap,
@@ -29,6 +32,47 @@ import { useState, useEffect } from "react"
 import { Sidebar } from "@/components/sidebar"
 
 export default function X402Page() {
+  const { connected, publicKey } = useWallet()
+  const { setVisible } = useWalletModal()
+  const router = useRouter()
+
+  // Check wallet connection on page load
+  useEffect(() => {
+    if (!connected) {
+      // Redirect to home page if wallet not connected
+      router.push('/')
+    }
+  }, [connected, router])
+
+  // Show wallet connection prompt if not connected
+  if (!connected) {
+    return (
+      <div className="flex min-h-screen bg-background">
+        <Sidebar />
+        <main className="flex-1 ml-0 lg:ml-72 p-6 lg:p-12">
+          <div className="flex items-center justify-center h-full">
+            <Card className="p-12 text-center border border-accent/30 bg-gradient-to-br from-card to-accent/5 shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)]">
+              <div className="h-20 w-20 rounded-2xl bg-accent/20 flex items-center justify-center mx-auto mb-6 border border-accent/30">
+                <Wallet className="h-10 w-10 text-accent" />
+              </div>
+              <h2 className="text-3xl font-bold mb-4">Wallet Required</h2>
+              <p className="text-muted-foreground mb-6 max-w-md">
+                You need to connect your Phantom wallet to access X402 features. Please connect your wallet to continue.
+              </p>
+              <Button 
+                onClick={() => setVisible(true)}
+                className="h-12 px-8 bg-accent text-accent-foreground hover:bg-accent/90 font-bold shadow-glow-accent"
+              >
+                <Zap className="h-5 w-5 mr-2" />
+                Connect Phantom Wallet
+              </Button>
+            </Card>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   const [messages, setMessages] = useState([
     {
       role: "assistant",
