@@ -1,8 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useWallet } from "@solana/wallet-adapter-react"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import {
   BarChart3,
@@ -26,7 +28,31 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [pendingX402Navigation, setPendingX402Navigation] = useState(false)
+  
+  // Wallet functionality
+  const { publicKey, connected, disconnect, select, wallets } = useWallet()
+  const { toast } = useToast()
+
+  // Effect to handle navigation after wallet connection
+  useEffect(() => {
+    if (connected && pendingX402Navigation) {
+      setPendingX402Navigation(false)
+      // Show success message
+      toast({
+        title: "✅ Wallet Connected Successfully!",
+        description: "Welcome to X402! Your Phantom wallet is now connected and you have access to all features.",
+        id: `x402-success-${Date.now()}`,
+      })
+      // Navigate to x402 after a short delay to show the success message
+      setTimeout(() => {
+        router.push('/x402')
+        closeMobileMenu()
+      }, 1000)
+    }
+  }, [connected, pendingX402Navigation, router, toast])
 
   const isActive = (path: string) => {
     if (!pathname) return false
@@ -43,6 +69,83 @@ export function Sidebar({ className }: SidebarProps) {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false)
+  }
+
+  // Wallet handlers
+  const handleWalletConnect = async () => {
+    console.log('handleWalletConnect clicked')
+    try {
+      // Find Phantom wallet
+      const phantomWallet = wallets.find(wallet => wallet.adapter.name === 'Phantom')
+      
+      if (phantomWallet) {
+        console.log('Phantom wallet found, connecting...')
+        select(phantomWallet.adapter.name)
+        await phantomWallet.adapter.connect()
+        console.log('Phantom wallet connected successfully')
+      } else {
+        console.log('Phantom wallet not found')
+        toast({
+          title: "❌ Phantom Wallet Not Found",
+          description: "Please install the Phantom wallet browser extension and try again.",
+          id: `phantom-not-found-${Date.now()}`,
+        })
+      }
+    } catch (error) {
+      console.error('Failed to connect wallet:', error)
+      toast({
+        title: "❌ Connection Failed", 
+        description: "Failed to connect to Phantom wallet. Please try again.",
+        id: `connection-error-${Date.now()}`,
+      })
+    }
+    closeMobileMenu()
+  }
+
+  const handleWalletDisconnect = async () => {
+    try {
+      await disconnect()
+      setPendingX402Navigation(false) // Clear any pending navigation
+      closeMobileMenu()
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error)
+    }
+  }
+
+  // Handle x402 navigation with wallet check
+  const handleX402Navigation = (e: React.MouseEvent) => {
+    if (!connected) {
+      e.preventDefault()
+      setPendingX402Navigation(true)
+      toast({
+        title: "🔒 Wallet Connection Required",
+        description: "Connect your Phantom wallet to unlock X402 privacy features and advanced functionality.",
+        action: (
+          <div className="flex gap-2 mt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                console.log('Toast connect button clicked')
+                handleWalletConnect()
+              }}
+              className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-4 py-2"
+            >
+              🚀 Connect Phantom
+            </Button>
+          </div>
+        ),
+        id: `x402-wallet-${Date.now()}`,
+      })
+    } else {
+      closeMobileMenu()
+    }
+  }
+
+  // Format wallet address for display
+  const formatWalletAddress = (address: string) => {
+    if (!address) return ''
+    return `${address.slice(0, 4)}...${address.slice(-4)}`
   }
 
   return (
@@ -153,7 +256,7 @@ export function Sidebar({ className }: SidebarProps) {
                 Wallet Lookup
               </Button>
             </Link>
-            <Link href="/x402" onClick={closeMobileMenu}>
+            <Link href="/x402" onClick={handleX402Navigation}>
               <Button
                 variant="ghost"
                 className={getButtonClasses("/x402")}
@@ -203,12 +306,30 @@ export function Sidebar({ className }: SidebarProps) {
           </nav>
         </div>
 
-        {/* Fixed Bottom Button */}
+        {/* Fixed Bottom Button - Wallet */}
         <div className="p-8 pt-0 shrink-0">
-          <Button className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-base shadow-glow-accent">
-            <Zap className="h-5 w-5 mr-2" />
-            Connect Phantom
-          </Button>
+          {connected && publicKey ? (
+            <div className="space-y-2">
+              <div className="w-full h-12 bg-accent/20 text-accent border border-accent/30 rounded-lg flex items-center justify-center font-bold text-sm">
+                <Wallet className="h-4 w-4 mr-2" />
+                {formatWalletAddress(publicKey.toBase58())}
+              </div>
+              <Button 
+                onClick={handleWalletDisconnect}
+                className="w-full h-10 bg-red-600 text-white hover:bg-red-700 font-bold text-sm"
+              >
+                Disconnect
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              onClick={handleWalletConnect}
+              className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-base shadow-glow-accent"
+            >
+              <Zap className="h-5 w-5 mr-2" />
+              Connect Phantom
+            </Button>
+          )}
         </div>
       </aside>
     </>
