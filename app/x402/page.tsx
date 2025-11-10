@@ -45,6 +45,19 @@ interface Message {
   paymentSignature?: string
 }
 
+// Helper function to format message content
+const formatMessageContent = (content: string) => {
+  // Clean up any remaining markdown symbols and format text properly
+  return content
+    // Remove excessive ** symbols
+    .replace(/\*\*\*/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    // Clean up excessive spacing
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 export default function X402Page() {
   const { connected, publicKey, sendTransaction } = useWallet()
   const { connection } = useConnection()
@@ -56,20 +69,23 @@ export default function X402Page() {
     {
       id: "welcome",
       role: "assistant",
-      content: `Hi! I'm 147.402 Agent, your premium AI coding assistant powered by the X402 payment protocol.
+      content: `Hi! I'm X402 Agent, your premium AI cryptocurrency specialist powered by the X402 payment protocol.
 
 I can help you with:
-- Programming (Python, JavaScript, Rust, Solana, etc.)
-- Code debugging and optimization
-- API integrations and architecture
+- Cryptocurrency trading strategies and market analysis
+- Technical analysis and chart reading
+- DeFi protocols (Uniswap, Aave, Compound, etc.)
 - Blockchain development (Solana, Ethereum)
-- HTTP 402 payment implementation
-- DeFi protocol integration
-- And much more!
+- Smart contract development (Solidity, Anchor/Rust)
+- NFT markets and minting strategies
+- Yield farming and liquidity mining
+- Cross-chain technologies and bridges
+- Crypto portfolio management and risk assessment
+- Web3 development and integration
 
-💰 **Payment System**: Each message costs 0.00001 USDC, paid instantly via Solana.
+💰 **Payment System**: Each message costs 0.00001 USDC, paid instantly via Solana for premium crypto expertise.
 
-Ask me any coding question to get started! 🚀`,
+Ask me any cryptocurrency, blockchain, or Web3 question to get started! 🚀`,
       timestamp: new Date().toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit',
@@ -86,15 +102,15 @@ Ask me any coding question to get started! 🚀`,
 
   // Stats state  
   const [activities, setActivities] = useState([
-    { agent: "CodeAnalyzer_AI", amount: 0.00001, service: "code review", time: "just now", isNew: true },
-    { agent: "Agent_42x7", amount: 0.00001, service: "API design", time: "2s ago", isNew: false },
-    { agent: "DevBot_v3", amount: 0.00001, service: "debugging help", time: "5s ago", isNew: false },
-    { agent: "ArchitectAI", amount: 0.00001, service: "system design", time: "8s ago", isNew: false },
+    { agent: "CryptoAnalyzer_AI", amount: 0.00001, service: "trading strategy", time: "just now", isNew: true },
+    { agent: "DeFi_Agent_42", amount: 0.00001, service: "yield farming", time: "2s ago", isNew: false },
+    { agent: "BlockchainBot_v3", amount: 0.00001, service: "smart contract audit", time: "5s ago", isNew: false },
+    { agent: "Web3Architect", amount: 0.00001, service: "DeFi protocol design", time: "8s ago", isNew: false },
   ])
 
   const [stats, setStats] = useState({
     apiCalls: 1248267,
-    codeReviews: 4882,
+    cryptoAnalysis: 4882,
     activeAgents: 141,
     earnedUSDC: 4.19,
   })
@@ -119,20 +135,20 @@ Ask me any coding question to get started! 🚀`,
       // Update stats
       setStats((prev) => ({
         apiCalls: prev.apiCalls + Math.floor(Math.random() * 10),
-        codeReviews: prev.codeReviews + (Math.random() > 0.7 ? 1 : 0),
+        cryptoAnalysis: prev.cryptoAnalysis + (Math.random() > 0.7 ? 1 : 0),
         activeAgents: prev.activeAgents + (Math.random() > 0.5 ? 1 : -1),
         earnedUSDC: prev.earnedUSDC + Math.random() * 0.00001,
       }))
 
       // Add new activity
-      const agents = ["APIBuilder_AI", "CodeReview_Bot", "DebugMaster", "SecurityAI", "OptimizAI"]
+      const agents = ["CryptoTrader_AI", "DeFiExpert_Bot", "YieldMaster", "NFTAnalyzer", "ChainOptimizer"]
       const services = [
-        "code analysis",
-        "API documentation", 
-        "bug detection",
-        "security audit",
-        "performance optimization",
-        "code generation",
+        "trading analysis",
+        "DeFi strategy", 
+        "yield optimization",
+        "NFT valuation",
+        "portfolio rebalancing",
+        "risk assessment",
       ]
       const newActivity = {
         agent: agents[Math.floor(Math.random() * agents.length)],
@@ -419,7 +435,7 @@ Ask me any coding question to get started! 🚀`,
             {/* Header */}
             <div className="mb-12">
               <Badge className="mb-6 bg-cyan/20 text-cyan border-cyan/30 px-6 py-2 text-sm font-bold">
-                147.402 PROTOCOL
+                X402 PROTOCOL
               </Badge>
               <h1 className="text-7xl font-black tracking-tighter mb-6 leading-none text-balance">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan via-blue-400 to-cyan">
@@ -429,7 +445,7 @@ Ask me any coding question to get started! 🚀`,
                 Payment Layer
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed text-pretty font-medium max-w-2xl">
-                The intelligent API that transforms coding challenges into solutions with AI assistance. Pay per use
+                The intelligent API that transforms cryptocurrency challenges into profitable solutions with premium AI assistance. Pay per use
                 with HTTP 402 protocol on Solana.
               </p>
             </div>
@@ -471,8 +487,8 @@ Ask me any coding question to get started! 🚀`,
                     <p className="text-sm font-bold text-green-500">LIVE</p>
                   </div>
                 </div>
-                <p className="text-4xl font-black mb-1">{stats.codeReviews.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground font-medium">Code reviews completed</p>
+                <p className="text-4xl font-black mb-1">{stats.cryptoAnalysis.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground font-medium">Crypto analyses completed</p>
               </Card>
 
               <Card className="p-6 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/30">
@@ -568,17 +584,17 @@ Ask me any coding question to get started! 🚀`,
                     <Code2 className="h-6 w-6 text-accent" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-black mb-2">AI-Powered Coding</h4>
+                    <h4 className="text-xl font-black mb-2">AI-Powered Crypto Analysis</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Advanced coding assistant powered by GPT-3.5 Turbo. Get help with debugging, architecture, 
-                      API integration, and full-stack development across multiple programming languages.
+                      Advanced cryptocurrency specialist powered by GPT-3.5 Turbo. Get expert help with trading strategies, 
+                      DeFi protocols, market analysis, and blockchain development across multiple chains.
                     </p>
                     <div className="flex gap-2 mt-3">
                       <Badge variant="outline" className="text-xs font-bold">
-                        GPT-3.5
+                        Trading
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
-                        Multi-Language
+                        DeFi
                       </Badge>
                       <Badge variant="outline" className="text-xs font-bold">
                         Real-time
@@ -648,8 +664,8 @@ Ask me any coding question to get started! 🚀`,
                 {[
                   {
                     step: "1",
-                    title: "Send your coding question",
-                    desc: "Type any programming question or paste your code for review",
+                    title: "Send your crypto question",
+                    desc: "Ask about trading strategies, DeFi protocols, or blockchain development",
                   },
                   {
                     step: "2", 
@@ -659,12 +675,12 @@ Ask me any coding question to get started! 🚀`,
                   {
                     step: "3",
                     title: "AI processes your request",
-                    desc: "Advanced AI analyzes your question and generates detailed response",
+                    desc: "Advanced AI analyzes your crypto question and generates expert insights",
                   },
                   {
                     step: "4",
-                    title: "Receive expert assistance",
-                    desc: "Get detailed code solutions, debugging help, and best practices",
+                    title: "Receive crypto expertise",
+                    desc: "Get detailed trading advice, DeFi strategies, and blockchain solutions",
                   },
                 ].map((item, index) => (
                   <div key={index} className="flex items-start gap-4">
@@ -723,8 +739,8 @@ Ask me any coding question to get started! 🚀`,
                   <MessageSquare className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black">147.402 Agent</h2>
-                  <p className="text-sm text-muted-foreground font-medium">AI Coding Assistant • $0.00001 USDC per message</p>
+                  <h2 className="text-2xl font-black">X402 Agent</h2>
+                  <p className="text-sm text-muted-foreground font-medium">AI Crypto Specialist • $0.00001 USDC per message</p>
                 </div>
                 <div className="ml-auto">
                   <div className="flex items-center gap-2">
@@ -752,8 +768,8 @@ Ask me any coding question to get started! 🚀`,
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs text-muted-foreground font-medium">
-                        {message.role === "user" ? "You" : "147.402 Agent"} • {message.timestamp}
+                      <span className={`text-xs font-medium ${message.role === "user" ? "text-black" : "text-muted-foreground"}`}>
+                        {message.role === "user" ? "You" : "X402 Agent"} • {message.timestamp}
                       </span>
                       {message.paymentSignature && (
                         <Badge className="bg-green-500/20 text-green-500 border-green-500/30 text-xs">
@@ -762,10 +778,10 @@ Ask me any coding question to get started! 🚀`,
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{message.content}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{formatMessageContent(message.content)}</p>
                     {message.paymentSignature && (
                       <div className="mt-2 pt-2 border-t border-border/50">
-                        <p className="text-xs text-muted-foreground font-mono">
+                        <p className={`text-xs font-mono font-bold ${message.role === "user" ? "text-black" : "text-muted-foreground"}`}>
                           Tx: {message.paymentSignature.slice(0, 8)}...{message.paymentSignature.slice(-8)}
                         </p>
                       </div>
@@ -798,7 +814,7 @@ Ask me any coding question to get started! 🚀`,
             <div className="p-8 border-t border-border bg-card/50 backdrop-blur">
               <div className="flex gap-4">
                 <Input
-                  placeholder="Ask about coding, debugging, blockchain development, or any technical question..."
+                  placeholder="Ask about crypto trading, DeFi strategies, blockchain development, or any cryptocurrency question..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
