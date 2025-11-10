@@ -1,3 +1,14 @@
+// Temporarily disabled ETH Tracker hook functionality
+export const useEthTracker = () => {
+  return {
+    data: null,
+    isLoading: false,
+    error: "ETH Tracker is temporarily disabled",
+    refetch: () => {},
+    searchToken: () => null
+  }
+}
+
 // import { useState, useEffect } from 'react'
 
 // interface TrendingToken {

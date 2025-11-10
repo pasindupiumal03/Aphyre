@@ -1,3 +1,15 @@
+// Temporarily disabled ETH Tracker functionality
+export default function TokenDetailPage({ params }: { params: Promise<{ address: string }> }) {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-muted-foreground mb-4">Token Details</h1>
+        <p className="text-muted-foreground">This feature is temporarily disabled.</p>
+      </div>
+    </div>
+  )
+}
+
 // "use client"
 
 // import Link from "next/link"

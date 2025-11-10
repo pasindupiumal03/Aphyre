@@ -1,3 +1,13 @@
+// Temporarily disabled ETH Tracker API functionality
+import { NextResponse } from 'next/server';
+
+export async function GET(req: Request) {
+  return NextResponse.json({
+    success: false,
+    message: "ETH Tracker API is temporarily disabled"
+  }, { status: 503 });
+}
+
 // import { NextResponse } from 'next/server';
 
 // const COINGECKO_URL = 'https://api.coingecko.com/api/v3/coins/ethereum';
