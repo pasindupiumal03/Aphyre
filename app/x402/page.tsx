@@ -71,19 +71,19 @@ export default function X402Page() {
       role: "assistant",
       content: `Hi! I'm X402 Agent, your premium AI cryptocurrency specialist powered by the X402 payment protocol.
 
-I can help you with:
-- Cryptocurrency trading strategies and market analysis
-- Technical analysis and chart reading
-- DeFi protocols (Uniswap, Aave, Compound, etc.)
-- Blockchain development (Solana, Ethereum)
-- Smart contract development (Solidity, Anchor/Rust)
-- NFT markets and minting strategies
-- Yield farming and liquidity mining
-- Cross-chain technologies and bridges
-- Crypto portfolio management and risk assessment
-- Web3 development and integration
+🔍 I can help you with:
+• Cryptocurrency trading strategies and market analysis
+• Technical analysis and chart reading  
+• DeFi protocols (Uniswap, Aave, Compound, etc.)
+• Blockchain development (Solana, Ethereum)
+• Smart contract development (Solidity, Anchor/Rust)
+• NFT markets and minting strategies
+• Yield farming and liquidity mining
+• Cross-chain technologies and bridges
+• Crypto portfolio management and risk assessment
+• Web3 development and integration
 
-💰 **Payment System**: Each message costs 0.00001 USDC, paid instantly via Solana for premium crypto expertise.
+💰 Payment System: Each message costs 0.00001 USDC, paid instantly via Solana for premium crypto expertise.
 
 Ask me any cryptocurrency, blockchain, or Web3 question to get started! 🚀`,
       timestamp: new Date().toLocaleTimeString('en-US', { 
@@ -739,8 +739,8 @@ Ask me any cryptocurrency, blockchain, or Web3 question to get started! 🚀`,
                   <MessageSquare className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black">X402 Agent</h2>
-                  <p className="text-sm text-muted-foreground font-medium">AI Crypto Specialist • $0.00001 USDC per message</p>
+                  <h2 className="text-2xl font-black tracking-tight">X402 Agent</h2>
+                  <p className="text-sm text-muted-foreground font-semibold tracking-wide">AI Crypto Specialist • $0.00001 USDC per message</p>
                 </div>
                 <div className="ml-auto">
                   <div className="flex items-center gap-2">
@@ -767,21 +767,29 @@ Ask me any cryptocurrency, blockchain, or Web3 question to get started! 🚀`,
                         : "bg-card border-border"
                     }`}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className={`text-xs font-medium ${message.role === "user" ? "text-black" : "text-muted-foreground"}`}>
+                    <div className="flex justify-between items-start mb-3">
+                      <span className={`text-xs font-bold tracking-wide ${message.role === "user" ? "text-black/80" : "text-muted-foreground"}`}>
                         {message.role === "user" ? "You" : "X402 Agent"} • {message.timestamp}
                       </span>
                       {message.paymentSignature && (
-                        <Badge className="bg-green-500/20 text-green-500 border-green-500/30 text-xs">
+                        <Badge className="bg-emerald-900/40 text-emerald-100 border-emerald-700/50 text-xs font-bold">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Paid
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{formatMessageContent(message.content)}</p>
+                    <div className={`text-base leading-relaxed whitespace-pre-wrap ${
+                      message.role === "user" 
+                        ? "font-semibold text-accent-foreground" 
+                        : "font-normal text-foreground"
+                    }`}>
+                      {formatMessageContent(message.content)}
+                    </div>
                     {message.paymentSignature && (
-                      <div className="mt-2 pt-2 border-t border-border/50">
-                        <p className={`text-xs font-mono font-bold ${message.role === "user" ? "text-black" : "text-muted-foreground"}`}>
+                      <div className="mt-3 pt-3 border-t border-border/30">
+                        <p className={`text-xs font-mono font-bold tracking-wider ${
+                          message.role === "user" ? "text-black/70" : "text-muted-foreground/80"
+                        }`}>
                           Tx: {message.paymentSignature.slice(0, 8)}...{message.paymentSignature.slice(-8)}
                         </p>
                       </div>
@@ -802,8 +810,8 @@ Ask me any cryptocurrency, blockchain, or Web3 question to get started! 🚀`,
                     <Loader2 className="h-5 w-5 text-white animate-spin" />
                   </div>
                   <Card className="max-w-2xl p-4 bg-card border-border">
-                    <p className="text-sm leading-relaxed font-medium text-muted-foreground">
-                      {isPaymentProcessing ? "Processing payment..." : "Generating response..."}
+                    <p className="text-base leading-relaxed font-medium text-muted-foreground">
+                      {isPaymentProcessing ? "Processing payment..." : "Generating crypto analysis..."}
                     </p>
                   </Card>
                 </div>
@@ -819,7 +827,7 @@ Ask me any cryptocurrency, blockchain, or Web3 question to get started! 🚀`,
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                   disabled={isLoading || isPaymentProcessing || !sufficientFunds}
-                  className="flex-1 h-14 px-6 text-base border-2 focus:border-accent"
+                  className="flex-1 h-14 px-6 text-base border-2 focus:border-accent font-medium"
                 />
                 <Button
                   onClick={handleSend}
@@ -835,14 +843,14 @@ Ask me any cryptocurrency, blockchain, or Web3 question to get started! 🚀`,
                 </Button>
               </div>
               <div className="flex justify-between items-center mt-3">
-                <p className="text-xs text-muted-foreground font-medium">
+                <p className="text-xs text-muted-foreground font-semibold">
                   {!sufficientFunds ? (
                     <span className="text-red-500 font-bold">⚠️ Insufficient USDC balance. Please add USDC to your Phantom wallet to continue. You need at least 0.00001 USDC per message.</span>
                   ) : (
                     <span>💳 Each message costs 0.00001 USDC • Balance: ${userBalance.toFixed(6)}</span>
                   )}
                 </p>
-                <Badge variant="secondary" className="font-bold text-xs">
+                <Badge variant="secondary" className="font-bold text-xs tracking-wide">
                   {isPaymentProcessing ? 'Processing Payment...' : isLoading ? 'AI Thinking...' : 'Ready'}
                 </Badge>
               </div>
