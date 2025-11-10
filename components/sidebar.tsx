@@ -229,7 +229,7 @@ export function Sidebar({ className }: SidebarProps) {
                 News Sentiment
               </Button>
             </Link>
-            <Link href="/eth-tracker" onClick={closeMobileMenu}>
+            {/* <Link href="/eth-tracker" onClick={closeMobileMenu}>
               <Button
                 variant="ghost"
                 className={getButtonClasses("/eth-tracker")}
@@ -237,7 +237,7 @@ export function Sidebar({ className }: SidebarProps) {
                 <Coins className="h-5 w-5" />
                 ETH Tracker
               </Button>
-            </Link>
+            </Link> */}
             <Link href="/solana-tracker" onClick={closeMobileMenu}>
               <Button
                 variant="ghost"
@@ -262,7 +262,7 @@ export function Sidebar({ className }: SidebarProps) {
                 className={getButtonClasses("/x402")}
               >
                 <Zap className="h-5 w-5" />
-                X402
+                X402 Agent
               </Button>
             </Link>
             <div className="pt-4 mt-4 border-t border-border">
