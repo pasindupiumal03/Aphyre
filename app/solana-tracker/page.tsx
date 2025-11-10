@@ -28,6 +28,8 @@ import { Sidebar } from "@/components/sidebar"
 export default function SolanaTracker() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [navigatingTokenAddress, setNavigatingTokenAddress] = useState<string | null>(null)
   const { data, isLoading, error } = useSolanaTracker()
   const router = useRouter()
 
@@ -58,6 +60,28 @@ export default function SolanaTracker() {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleSearch()
+    }
+  }
+
+  const handleTokenClick = async (tokenAddress: string) => {
+    if (!tokenAddress || isNavigating) return
+    
+    try {
+      setIsNavigating(true)
+      setNavigatingTokenAddress(tokenAddress)
+      
+      // Add a minimum loading time to prevent too many rapid requests
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      router.push(`/solana-tracker/${tokenAddress}`)
+    } catch (error) {
+      console.error("Navigation error:", error)
+    } finally {
+      // Keep loading state for a bit longer for smooth transition
+      setTimeout(() => {
+        setIsNavigating(false)
+        setNavigatingTokenAddress(null)
+      }, 200)
     }
   }
 
@@ -149,11 +173,22 @@ export default function SolanaTracker() {
             </Card>
           ) : data?.trendingTokens && data.trendingTokens.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {data.trendingTokens.slice(0, 20).map((token, index) => (
-                <Card key={token.token_address || index} className="p-6 bg-card border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] p-6 bg-card">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="mb-4 h-20 w-20 rounded-full bg-linear-to-br from-accent/20 to-cyan/20 flex items-center justify-center text-4xl border-2 border-accent/30">
-                      {token.logoURI ? (
+              {data.trendingTokens.slice(0, 20).map((token, index) => {
+                const isTokenNavigating = navigatingTokenAddress === token.address
+                
+                return (
+                  <Card 
+                    key={token.address || index} 
+                    className={`p-6 bg-card border-border hover:border-accent/50 hover:shadow-[0_8px_30px_-12px_rgba(216,105,142,0.3)] transition-all duration-300 cursor-pointer group ${
+                      isTokenNavigating ? 'opacity-75 pointer-events-none' : ''
+                    }`}
+                    onClick={() => handleTokenClick(token.address)}
+                  >
+                    <div className="flex flex-col items-center text-center">
+                      <div className="mb-4 h-20 w-20 rounded-full bg-linear-to-br from-accent/20 to-cyan/20 flex items-center justify-center text-4xl border-2 border-accent/30 group-hover:border-accent/50 transition-colors relative">
+                        {isTokenNavigating ? (
+                          <Loader2 className="h-8 w-8 text-cyan animate-spin" />
+                        ) : token.logoURI ? (
                           <img 
                             src={token.logoURI} 
                             alt={token.name} 
@@ -167,18 +202,18 @@ export default function SolanaTracker() {
                             }}
                           />
                         ) : (
-                          <span className="text-xl font-bold text-cyan">
+                          <span className="text-xl font-bold text-cyan group-hover:text-accent transition-colors">
                             {token.symbol?.charAt(0) || '?'}
                           </span>
                         )}
                       </div>
                       <h4 className="text-lg font-black mb-1 group-hover:text-cyan transition-colors line-clamp-2 h-14 flex items-center">
-                        {token.name || 'Unknown Token'}
+                        {isTokenNavigating ? 'Loading...' : (token.name || 'Unknown Token')}
                       </h4>
-                      <Badge variant="secondary" className="mb-4 font-bold">
+                      <Badge variant="secondary" className="mb-4 font-bold group-hover:bg-accent/20 transition-colors">
                         {token.symbol || 'N/A'}
                       </Badge>
-                      <p className="text-2xl font-black text-cyan mb-2">
+                      <p className="text-2xl font-black text-cyan mb-2 group-hover:text-accent transition-colors">
                         ${token.price ? token.price.toFixed(6) : 'N/A'}
                       </p>
                       <p className={`text-sm font-bold mb-3 ${
@@ -191,12 +226,13 @@ export default function SolanaTracker() {
                           : 'N/A'
                         }
                       </p>
-                      <p className="text-xs text-muted-foreground font-medium">
-                        Rank: #{index + 1}
+                      <p className="text-xs text-muted-foreground font-medium group-hover:text-cyan/70 transition-colors">
+                        {isTokenNavigating ? 'Opening details...' : `Rank: #${index + 1} • Click for details`}
                       </p>
                     </div>
                   </Card>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <Card className="p-8 border-muted">
