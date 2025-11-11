@@ -211,13 +211,13 @@ export function Sidebar({ className }: SidebarProps) {
                 Dashboard
               </Button>
             </Link>
-            <Link href="/ai-chat" onClick={closeMobileMenu}>
+            <Link href="/x402" onClick={handleX402Navigation}>
               <Button
                 variant="ghost"
-                className={getButtonClasses("/ai-chat")}
+                className={getButtonClasses("/x402")}
               >
-                <MessageSquare className="h-5 w-5" />
-                AI Chat
+                <Zap className="h-5 w-5" />
+                X402 Agent
               </Button>
             </Link>
             <Link href="/news-sentiment" onClick={closeMobileMenu}>
@@ -256,13 +256,13 @@ export function Sidebar({ className }: SidebarProps) {
                 Wallet Lookup
               </Button>
             </Link>
-            <Link href="/x402" onClick={handleX402Navigation}>
+            <Link href="/ai-chat" onClick={closeMobileMenu}>
               <Button
                 variant="ghost"
-                className={getButtonClasses("/x402")}
+                className={getButtonClasses("/ai-chat")}
               >
-                <Zap className="h-5 w-5" />
-                X402 Agent
+                <MessageSquare className="h-5 w-5" />
+                AI Chat
               </Button>
             </Link>
             <div className="pt-4 mt-4 border-t border-border">
