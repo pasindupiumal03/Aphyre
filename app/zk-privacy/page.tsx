@@ -222,7 +222,7 @@ export default function ZKPrivacyPage() {
                 <div className="h-16 w-16 rounded-2xl bg-cyan/20 flex items-center justify-center mb-6 border border-cyan/30">
                   <Coins className="h-8 w-8 text-cyan" />
                 </div>
-                <h3 className="text-3xl font-black mb-3">SUMB</h3>
+                <h3 className="text-3xl font-black mb-3">$Aphyre</h3>
                 <p className="text-sm text-muted-foreground font-medium">Shielded transactions</p>
               </Card>
               <Card className="p-8 bg-card/50 backdrop-blur border-border hover:border-accent/60 transition-all hover:shadow-[0_0_50px_-12px_rgba(216,105,142,0.4)]">
