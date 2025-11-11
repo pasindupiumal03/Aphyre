@@ -33,14 +33,19 @@ const cleanMarkdownFormatting = (text: string): string => {
 
 // Helper function to detect token address format
 const detectTokenType = (input: string): 'solana' | 'ethereum' | 'unknown' => {
-  // Solana addresses are typically 32-44 characters, base58 encoded
-  if (input.length >= 32 && input.length <= 44 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(input)) {
-    return 'solana';
-  }
-  // Ethereum addresses start with 0x and are 42 characters long
-  if (input.startsWith('0x') && input.length === 42) {
+  // Remove any whitespace
+  const cleanInput = input.trim();
+  
+  // Ethereum addresses start with 0x and are 42 characters long (including 0x)
+  if (cleanInput.startsWith('0x') && cleanInput.length === 42 && /^0x[a-fA-F0-9]{40}$/.test(cleanInput)) {
     return 'ethereum';
   }
+  
+  // Solana addresses are typically 32-44 characters, base58 encoded (no 0, O, I, l)
+  if (cleanInput.length >= 32 && cleanInput.length <= 44 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(cleanInput)) {
+    return 'solana';
+  }
+  
   return 'unknown';
 };
 
@@ -199,6 +204,330 @@ const searchTokenByNameOrSymbol = async (query: string) => {
     console.error('Error searching tokens:', error);
     return [];
   }
+};
+
+// Function to fetch Solana token data
+const fetchSolanaTokenData = async (address: string) => {
+  const SOLANA_TRACKER_API_KEY = process.env.SOLANA_TRACKER_API_KEY || '8b90bec5-e575-4212-9c39-4e2496f29a2f';
+  const SOLANA_API_URL = 'https://data.solanatracker.io';
+  
+  try {
+    console.log(`Fetching Solana token data for: ${address}`);
+    
+    const response = await fetch(`${SOLANA_API_URL}/tokens/${address}`, {
+      headers: {
+        'x-api-key': SOLANA_TRACKER_API_KEY,
+      },
+    });
+    
+    console.log(`Solana API response status: ${response.status}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Solana API error: ${response.status} - ${errorText}`);
+      
+      // Always try fallback with CoinGecko for Solana tokens
+      return await fetchSolanaTokenFromCoinGecko(address);
+    }
+    
+    const data = await response.json();
+    console.log('Solana token data fetched successfully');
+    return data;
+  } catch (error) {
+    console.error('Error fetching Solana token data:', error);
+    // Try fallback with CoinGecko
+    return await fetchSolanaTokenFromCoinGecko(address);
+  }
+};
+
+// Fallback function to fetch Solana token data from CoinGecko
+const fetchSolanaTokenFromCoinGecko = async (address: string) => {
+  try {
+    console.log(`Trying CoinGecko fallback for Solana token: ${address}`);
+    
+    const cgUrl = `${COINGECKO_BASE_URL}/coins/solana/contract/${address}`;
+    const response = await fetch(cgUrl);
+    
+    if (!response.ok) {
+      console.log(`CoinGecko fallback failed: ${response.status}`);
+      // If CoinGecko also fails, return a basic structure with the address
+      return {
+        token: {
+          name: 'Unknown Solana Token',
+          symbol: 'UNKNOWN',
+          creation: {
+            creator: 'N/A'
+          }
+        },
+        pools: [{
+          marketCap: {
+            usd: 0
+          },
+          price: {
+            usd: 0
+          },
+          liquidity: {
+            usd: 0
+          },
+          txns: {
+            volume24h: 0,
+            total: 'N/A',
+            buys: 0,
+            sells: 0
+          },
+          market: 'unknown',
+          lpBurn: 'N/A',
+          security: {
+            freezeAuthority: null,
+            mintAuthority: null
+          }
+        }],
+        events: {
+          '24h': {
+            priceChangePercentage: 0
+          }
+        },
+        risk: {
+          score: 'N/A'
+        },
+        holders: 'N/A'
+      };
+    }
+    
+    const cgData = await response.json();
+    
+    // Transform CoinGecko data to match expected format
+    return {
+      token: {
+        name: cgData.name,
+        symbol: cgData.symbol,
+        creation: {
+          creator: 'N/A'
+        }
+      },
+      pools: [{
+        marketCap: {
+          usd: cgData.market_data?.market_cap?.usd || 0
+        },
+        price: {
+          usd: cgData.market_data?.current_price?.usd || 0
+        },
+        liquidity: {
+          usd: 0
+        },
+        txns: {
+          volume24h: cgData.market_data?.total_volume?.usd || 0,
+          total: 'N/A',
+          buys: 0,
+          sells: 0
+        },
+        market: 'coingecko',
+        lpBurn: 'N/A',
+        security: {
+          freezeAuthority: null,
+          mintAuthority: null
+        }
+      }],
+      events: {
+        '24h': {
+          priceChangePercentage: cgData.market_data?.price_change_percentage_24h || 0
+        }
+      },
+      risk: {
+        score: 'N/A'
+      },
+      holders: 'N/A'
+    };
+  } catch (error) {
+    console.error('Error fetching from CoinGecko:', error);
+    // Return a basic structure even if everything fails
+    return {
+      token: {
+        name: 'Unknown Solana Token',
+        symbol: 'UNKNOWN',
+        creation: {
+          creator: 'N/A'
+        }
+      },
+      pools: [{
+        marketCap: {
+          usd: 0
+        },
+        price: {
+          usd: 0
+        },
+        liquidity: {
+          usd: 0
+        },
+        txns: {
+          volume24h: 0,
+          total: 'N/A',
+          buys: 0,
+          sells: 0
+        },
+        market: 'unknown',
+        lpBurn: 'N/A',
+        security: {
+          freezeAuthority: null,
+          mintAuthority: null
+        }
+      }],
+      events: {
+        '24h': {
+          priceChangePercentage: 0
+        }
+      },
+      risk: {
+        score: 'N/A'
+      },
+      holders: 'N/A'
+    };
+  }
+};
+
+// Function to get detailed token information by address
+const getTokenDetailsByAddress = async (address: string, tokenType: 'solana' | 'ethereum') => {
+  try {
+    console.log(`Fetching token details for ${tokenType} address: ${address}`);
+    
+    if (tokenType === 'ethereum') {
+      // For Ethereum tokens, try to get data from CoinGecko by contract address
+      const contractUrl = `${COINGECKO_BASE_URL}/coins/ethereum/contract/${address}`;
+      const response = await fetch(contractUrl);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch Ethereum token data');
+      }
+      
+      const tokenData = await response.json();
+      
+      return {
+        name: tokenData.name,
+        symbol: tokenData.symbol?.toUpperCase(),
+        price: tokenData.market_data?.current_price?.usd,
+        change24h: tokenData.market_data?.price_change_percentage_24h,
+        marketCap: tokenData.market_data?.market_cap?.usd,
+        volume24h: tokenData.market_data?.total_volume?.usd,
+        description: tokenData.description?.en,
+        website: tokenData.links?.homepage?.[0],
+        explorer: `https://etherscan.io/address/${address}`,
+        tokenType: 'ethereum',
+        logo: tokenData.image?.large
+      };
+    } else if (tokenType === 'solana') {
+      // For Solana tokens, use the same API as the AI chat
+      return await fetchSolanaTokenData(address);
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error fetching token details:', error);
+    return null;
+  }
+};
+
+// Function to format token analysis response (now using the AI chat approach)
+const formatTokenAnalysisResponse = async (tokenData: any, address: string, tokenType: 'solana' | 'ethereum') => {
+  if (!tokenData) {
+    return `❌ Unable to fetch token details for address: ${address}\n\nThis could mean:\n• The token address is invalid\n• The token is not listed on major exchanges\n• Network connectivity issues\n\nPlease verify the address and try again.\n\n*Premium token analysis via X402 protocol*`;
+  }
+
+  let analysis = '';
+  
+  if (tokenType === 'solana') {
+    // Format Solana token data using the same structure as AI chat
+    const token = tokenData.token;
+    const pools = tokenData.pools?.[0]; // Get the first pool (usually most liquid)
+    const risk = tokenData.risk;
+    const events = tokenData.events;
+    
+    // Find the best pool (highest liquidity)
+    const bestPool = tokenData.pools?.reduce((prev: any, current: any) => 
+      (current.liquidity?.usd || 0) > (prev?.liquidity?.usd || 0) ? current : prev
+    );
+    
+    analysis = `${token?.name || 'Unknown Token'} Token Analysis
+
+Token Overview:
+- Name: ${token?.name || 'N/A'}
+- Symbol: ${token?.symbol || 'N/A'}
+- Creator: ${token?.creation?.creator || 'N/A'}
+- Market Cap: $${bestPool?.marketCap?.usd?.toLocaleString() || 'N/A'}
+- Price: $${bestPool?.price?.usd || 'N/A'}
+- 24h Change: ${events?.['24h']?.priceChangePercentage?.toFixed(2) || 'N/A'}%
+- 24h Volume: $${bestPool?.txns?.volume24h?.toLocaleString() || 'N/A'}
+- Liquidity: $${bestPool?.liquidity?.usd?.toLocaleString() || '0'}
+- Holders: ${tokenData.holders || 'N/A'}
+- Risk Score: ${risk?.score || 'N/A'}/10
+- Total Transactions: ${bestPool?.txns?.total?.toLocaleString() || 'N/A'}
+- Buys vs Sells: ${bestPool?.txns?.buys || 0}B / ${bestPool?.txns?.sells || 0}S
+- Market: ${bestPool?.market || 'N/A'}
+- LP Burn: ${bestPool?.lpBurn || 'N/A'}%
+- Security: Freeze Authority ${bestPool?.security?.freezeAuthority ? 'Present' : 'Revoked'}, Mint Authority ${bestPool?.security?.mintAuthority ? 'Present' : 'Revoked'}
+
+Analysis:
+
+Market Performance:
+- The ${token?.name || 'token'} currently holds a market cap of $${bestPool?.marketCap?.usd?.toLocaleString() || 'N/A'} with a price of $${bestPool?.price?.usd || 'N/A'}. The 24-hour change indicates ${events?.['24h']?.priceChangePercentage >= 0 ? 'a gain' : 'a decline'} of ${Math.abs(events?.['24h']?.priceChangePercentage || 0).toFixed(2)}%, reflecting recent market ${Math.abs(events?.['24h']?.priceChangePercentage || 0) > 10 ? 'volatility' : 'activity'}.
+- With a 24-hour trading volume of $${bestPool?.txns?.volume24h?.toLocaleString() || 'N/A'}, there is ${(bestPool?.txns?.volume24h || 0) > 10000 ? 'significant' : 'limited'} trading activity, ${(bestPool?.liquidity?.usd || 0) > 10000 ? 'with reasonable' : 'although liquidity stands at $' + (bestPool?.liquidity?.usd?.toLocaleString() || '0') + ', suggesting limited'} market depth.
+
+Risk Factors:
+- ${risk?.score !== 'N/A' ? `The risk score of ${risk?.score}/10 ${risk?.score < 5 ? 'indicates higher risk' : risk?.score < 7 ? 'suggests moderate risk' : 'shows relatively lower risk'}` : 'The lack of information on the risk score'} ${tokenData.holders === 'N/A' || !bestPool?.txns?.total ? 'and limited holder/transaction data could pose challenges in assessing the token\'s reliability and stability' : 'should be considered in investment decisions'}.
+- ${(bestPool?.liquidity?.usd || 0) < 10000 ? 'The low liquidity may indicate potential liquidity issues and impact the token\'s price stability' : 'The token maintains reasonable liquidity for trading activities'}.
+
+Investment Considerations:
+- Investors should ${risk?.score < 5 || (bestPool?.liquidity?.usd || 0) < 5000 ? 'approach this token with significant caution' : 'conduct thorough research before investing'} due to ${risk?.score < 5 ? 'the high risk score and ' : ''}${(bestPool?.liquidity?.usd || 0) < 5000 ? 'limited liquidity' : 'market conditions'}.
+- The token's market performance, characterized by ${events?.['24h']?.priceChangePercentage >= 0 ? 'recent gains' : 'recent decline'}, ${Math.abs(events?.['24h']?.priceChangePercentage || 0) > 15 ? 'suggests high volatility and' : 'indicates'} the need for thorough research and risk assessment before considering an investment.
+- It is advisable to monitor the market dynamics, ${bestPool?.security?.freezeAuthority === null && bestPool?.security?.mintAuthority === null ? 'security measures appear favorable with revoked authorities' : 'any updates on security measures'}, and potential developments that could influence the token's value and sustainability.
+
+${(bestPool?.liquidity?.usd || 0) < 5000 || risk?.score < 5 || Math.abs(events?.['24h']?.priceChangePercentage || 0) > 20 ? 
+'In conclusion, while this token presents opportunities for traders, its risk factors and market performance indicate a need for thorough due diligence before considering any investment. Stay informed, exercise caution, and assess the risk factors carefully to make well-informed decisions in the dynamic cryptocurrency market.' : 
+'In conclusion, this token shows reasonable fundamentals but requires continued monitoring of market conditions and developments. Always practice proper risk management and conduct thorough research before making investment decisions.'}
+
+*Premium Solana token analysis via X402 protocol*`;
+  } else if (tokenType === 'ethereum') {
+    // Format Ethereum token data
+    analysis = `🔍 **${tokenData.name || 'Unknown Token'} (${tokenData.symbol || 'N/A'}) Analysis**
+
+📊 **Basic Information:**
+• Token Name: ${tokenData.name || 'Not available'}
+• Symbol: ${tokenData.symbol || 'Not available'}
+• Blockchain: Ethereum
+• Contract Address: ${address}
+
+💰 **Price Metrics:**
+${tokenData.price ? `• Current Price: $${tokenData.price.toLocaleString()}` : '• Current Price: Not available'}
+${tokenData.change24h !== null && tokenData.change24h !== undefined ? 
+  `• 24h Change: ${tokenData.change24h >= 0 ? '📈' : '📉'} ${tokenData.change24h.toFixed(2)}% (${tokenData.change24h >= 0 ? 'bullish' : 'bearish'} momentum)` :
+  '• 24h Change: Not available'}
+${tokenData.marketCap ? `• Market Cap: $${tokenData.marketCap.toLocaleString()}` : ''}
+${tokenData.volume24h ? `• 24h Volume: $${tokenData.volume24h.toLocaleString()}` : ''}
+
+⚠️ **Risk Assessment:**
+${tokenData.marketCap ? 
+  tokenData.marketCap > 1000000000 ? '• Market Cap: Large Cap (>$1B) - Lower risk' :
+  tokenData.marketCap > 100000000 ? '• Market Cap: Mid Cap ($100M-$1B) - Moderate risk' :
+  '• Market Cap: Small Cap (<$100M) - Higher risk' : ''}
+
+💡 **Trading Insights:**
+${tokenData.change24h !== null && tokenData.change24h !== undefined ? 
+  tokenData.change24h > 10 ? `• Strong bullish momentum (+${tokenData.change24h.toFixed(2)}%) - Consider profit taking` :
+  tokenData.change24h > 5 ? `• Positive momentum (+${tokenData.change24h.toFixed(2)}%) - Monitor for continuation` :
+  tokenData.change24h < -10 ? `• Heavy selling pressure (${tokenData.change24h.toFixed(2)}%) - High risk/reward` :
+  tokenData.change24h < -5 ? `• Negative momentum (${tokenData.change24h.toFixed(2)}%) - Watch for reversal` :
+  `• Consolidation phase (${tokenData.change24h.toFixed(2)}%) - Range-bound trading` : ''}
+• Always use proper risk management (stop losses, position sizing)
+• Verify token legitimacy before investing
+• DYOR (Do Your Own Research) is essential
+
+🔗 **Useful Links:**
+• Explorer: ${tokenData.explorer}
+${tokenData.website ? `• Website: ${tokenData.website}` : ''}
+
+*Premium Ethereum token analysis via X402 protocol*`;
+  }
+  
+  return analysis;
 };
 
 // Function to format market data responses
@@ -371,7 +700,7 @@ const getX402AIResponse = async (message: string, conversationHistory: any[]) =>
     const lowerMessage = message.toLowerCase();
     
     if (lowerMessage.includes('help') || lowerMessage.includes('what can you do')) {
-      return `🤖 X402 Agent - Your Premium Crypto Assistant\n\nI can help you with:\n\n� Cryptocurrency & Trading:\n• Real-time price analysis and market trends\n• Trading strategies and technical analysis\n• Portfolio optimization advice\n• Risk assessment and management\n\n🔗 Blockchain & DeFi:\n• Smart contract development (Solana, Ethereum)\n• DeFi protocol integration and strategies\n• Yield farming and liquidity mining\n• Cross-chain bridge technologies\n\n⚡ Web3 Development:\n• Solana program development with Anchor\n• Ethereum smart contracts with Solidity\n• NFT marketplaces and minting\n• HTTP 402 payment implementation\n\n💡 Ask me anything about crypto, blockchain, or Web3 development!\n\n*Premium crypto expertise powered by X402 payment protocol*`;
+      return `🤖 X402 Agent - Your Premium Crypto Assistant\n\nI can help you with:\n\n💰 Cryptocurrency & Trading:\n• Real-time price analysis and market trends\n• Trading strategies and technical analysis\n• Portfolio optimization advice\n• Risk assessment and management\n\n� Token Analysis:\n• **Send any token address** (Ethereum or Solana) for detailed analysis\n• Market cap, price, volume, and risk assessment\n• Trading insights and recommendations\n• Holder distribution and liquidity analysis\n\n�🔗 Blockchain & DeFi:\n• Smart contract development (Solana, Ethereum)\n• DeFi protocol integration and strategies\n• Yield farming and liquidity mining\n• Cross-chain bridge technologies\n\n⚡ Web3 Development:\n• Solana program development with Anchor\n• Ethereum smart contracts with Solidity\n• NFT marketplaces and minting\n• HTTP 402 payment implementation\n\n💡 **Try these examples:**\n• "What's Bitcoin's price?"\n• Send a token address: "0x..." or Solana address\n• "Top gainers today"\n• "Market trends"\n\n*Premium crypto expertise powered by X402 payment protocol*`;
     }
     
     if (lowerMessage.includes('payment') || lowerMessage.includes('402') || lowerMessage.includes('usdc')) {
@@ -387,7 +716,7 @@ const getX402AIResponse = async (message: string, conversationHistory: any[]) =>
       return `I'm X402 Agent, your premium cryptocurrency specialist! 🚀\n\nI focus exclusively on crypto-related topics:\n• Cryptocurrency trading and analysis\n• Blockchain technology and development\n• DeFi protocols and strategies\n• Web3 and smart contracts\n• Market trends and price analysis\n\nPlease ask me about cryptocurrency, blockchain, or Web3 topics to get the most value from your X402 payment!\n\n*Powered by X402 micro-payment protocol - Premium crypto expertise*`;
     }
     
-    return `I'm X402 Agent, your premium crypto specialist! 🚀\n\nI specialize in:\n• Cryptocurrency trading and market analysis\n• Blockchain development (Solana, Ethereum)\n• DeFi protocols and yield strategies\n• Web3 integration and smart contracts\n• Real-time market insights\n\nWhat crypto question can I help you with today?\n\n*Powered by X402 micro-payment protocol*`;
+    return `I'm X402 Agent, your premium crypto specialist! 🚀\n\nI specialize in:\n• Cryptocurrency trading and market analysis\n• **Token analysis** - Send any contract address for detailed insights\n• Blockchain development (Solana, Ethereum)\n• DeFi protocols and yield strategies\n• Web3 integration and smart contracts\n• Real-time market insights\n\n💡 **Quick Start:**\n• Ask "What can you do?" for full capabilities\n• Send a token address (0x... or Solana) for analysis\n• Ask about Bitcoin price, market trends, or top gainers\n\n*Powered by X402 micro-payment protocol*`;
   }
   
   try {
@@ -548,7 +877,35 @@ export async function POST(request: NextRequest) {
 
     const trimmedMessage = message.trim();
     
-    // First, check if this is a real-time market data request
+    // First, check if this is a token address
+    const tokenType = detectTokenType(trimmedMessage);
+    
+    if (tokenType !== 'unknown') {
+      console.log(`Detected ${tokenType} token address: ${trimmedMessage}`);
+      
+      try {
+        const tokenData = await getTokenDetailsByAddress(trimmedMessage, tokenType);
+        const analysis = await formatTokenAnalysisResponse(tokenData, trimmedMessage, tokenType);
+        
+        return NextResponse.json({ 
+          message: analysis,
+          paymentVerified: true,
+          cost: 0.00001,
+          currency: 'USDC'
+        });
+        
+      } catch (error) {
+        console.error('Error analyzing token:', error);
+        return NextResponse.json({ 
+          message: `❌ Error analyzing token address: ${trimmedMessage}\n\nPlease verify the address is correct and try again.\n\n*Premium token analysis via X402 protocol*`,
+          paymentVerified: true,
+          cost: 0.00001,
+          currency: 'USDC'
+        });
+      }
+    }
+    
+    // Next, check if this is a real-time market data request
     const marketDataType = detectMarketDataRequest(trimmedMessage);
     
     if (marketDataType) {
@@ -635,30 +992,32 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Check if it might be a token name or symbol search
-    const searchResults = await searchTokenByNameOrSymbol(trimmedMessage);
-    
-    if (searchResults.length > 0) {
-      // Found potential token matches
-      let searchResponse = `I found ${searchResults.length} token(s) matching "${trimmedMessage}":\n\n`;
+    // Check if it might be a token name or symbol search (only if not detected as address and not market data)
+    if (!marketDataType && trimmedMessage.length < 20) { // Avoid searching very long messages
+      const searchResults = await searchTokenByNameOrSymbol(trimmedMessage);
       
-      searchResults.forEach((token: any, index: number) => {
-        searchResponse += `${index + 1}. ${token.name} (${token.symbol?.toUpperCase()})\n`;
-        searchResponse += `   - ID: ${token.id}\n`;
-        if (token.market_cap_rank) {
-          searchResponse += `   - Market Cap Rank: #${token.market_cap_rank}\n`;
-        }
-        searchResponse += `\n`;
-      });
-      
-      searchResponse += 'Would you like detailed analysis for any of these tokens? Just send me the token\'s contract address!\n\n*Premium crypto search via X402 protocol*';
-      
-      return NextResponse.json({ 
-        message: searchResponse,
-        paymentVerified: true,
-        cost: 0.00001,
-        currency: 'USDC'
-      });
+      if (searchResults.length > 0) {
+        // Found potential token matches
+        let searchResponse = `🔍 I found ${searchResults.length} token(s) matching "${trimmedMessage}":\n\n`;
+        
+        searchResults.forEach((token: any, index: number) => {
+          searchResponse += `${index + 1}. **${token.name}** (${token.symbol?.toUpperCase()})\n`;
+          searchResponse += `   • CoinGecko ID: ${token.id}\n`;
+          if (token.market_cap_rank) {
+            searchResponse += `   • Market Cap Rank: #${token.market_cap_rank}\n`;
+          }
+          searchResponse += `\n`;
+        });
+        
+        searchResponse += '💡 **Want detailed analysis?**\nSend me the token\'s contract address for comprehensive analysis including:\n• Price metrics and 24h performance\n• Risk assessment and market cap analysis\n• Trading insights and recommendations\n• Real-time blockchain data\n\n*Premium crypto search via X402 protocol*';
+        
+        return NextResponse.json({ 
+          message: searchResponse,
+          paymentVerified: true,
+          cost: 0.00001,
+          currency: 'USDC'
+        });
+      }
     }
 
     // Check rate limiting (basic implementation)
