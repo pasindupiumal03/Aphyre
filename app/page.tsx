@@ -691,11 +691,6 @@ export default function Dashboard() {
                             Fear: {fearGreedData?.value || 'N/A'}%
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-muted-foreground">
-                            {sentimentData.newsCount} articles
-                          </span>
-                        </div>
                       </div>
                     </div>
                   ) : (
