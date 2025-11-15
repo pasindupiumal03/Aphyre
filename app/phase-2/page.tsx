@@ -46,6 +46,114 @@ declare global {
   }
 }
 
+function CountdownTimer() {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  })
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    // Initialize countdown with 6 days, 23 hours, 59 minutes, 59 seconds from now
+    const initializeCountdown = () => {
+      const savedEndTime = localStorage.getItem('aphyre-phase2-countdown-end')
+      let endTime: number
+
+      if (savedEndTime) {
+        endTime = parseInt(savedEndTime)
+      } else {
+        // Set countdown to 6 days, 23 hours, 59 minutes, 59 seconds from now
+        const now = new Date().getTime()
+        endTime = now + (6 * 24 * 60 * 60 * 1000) + (23 * 60 * 60 * 1000) + (59 * 60 * 1000) + (59 * 1000)
+        localStorage.setItem('aphyre-phase2-countdown-end', endTime.toString())
+      }
+
+      return endTime
+    }
+
+    const endTime = initializeCountdown()
+    setIsLoaded(true)
+
+    const updateCountdown = () => {
+      const now = new Date().getTime()
+      const distance = endTime - now
+
+      if (distance > 0) {
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24))
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000)
+
+        setTimeLeft({ days, hours, minutes, seconds })
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+        // Optionally clear the stored end time when countdown reaches 0
+        localStorage.removeItem('aphyre-phase2-countdown-end')
+      }
+    }
+
+    // Update immediately
+    updateCountdown()
+
+    // Update every second
+    const interval = setInterval(updateCountdown, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center gap-8 mb-8">
+        <div className="text-center">
+          <div className="text-6xl font-black tracking-tighter mb-2">-</div>
+          <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Days</div>
+        </div>
+        <div className="text-6xl font-black text-muted-foreground">:</div>
+        <div className="text-center">
+          <div className="text-6xl font-black tracking-tighter mb-2">-</div>
+          <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Hours</div>
+        </div>
+        <div className="text-6xl font-black text-muted-foreground">:</div>
+        <div className="text-center">
+          <div className="text-6xl font-black tracking-tighter mb-2">-</div>
+          <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Minutes</div>
+        </div>
+        <div className="text-6xl font-black text-muted-foreground">:</div>
+        <div className="text-center">
+          <div className="text-6xl font-black tracking-tighter mb-2">-</div>
+          <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Seconds</div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-8 mb-8">
+      <div className="text-center">
+        <div className="text-6xl font-black tracking-tighter mb-2">{timeLeft.days}</div>
+        <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Days</div>
+      </div>
+      <div className="text-6xl font-black text-muted-foreground">:</div>
+      <div className="text-center">
+        <div className="text-6xl font-black tracking-tighter mb-2">{timeLeft.hours}</div>
+        <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Hours</div>
+      </div>
+      <div className="text-6xl font-black text-muted-foreground">:</div>
+      <div className="text-center">
+        <div className="text-6xl font-black tracking-tighter mb-2">{timeLeft.minutes}</div>
+        <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Minutes</div>
+      </div>
+      <div className="text-6xl font-black text-muted-foreground">:</div>
+      <div className="text-center">
+        <div className="text-6xl font-black tracking-tighter mb-2">{timeLeft.seconds}</div>
+        <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Seconds</div>
+      </div>
+    </div>
+  )
+}
+
 function NewsletterForm() {
   const router = useRouter()
   const [email, setEmail] = useState("")
@@ -152,7 +260,7 @@ export default function Phase2Page() {
 
         {/* Live Features */}
         <div className="mb-16 grid grid-cols-2 gap-6">
-          <Card className="border border-cyan/30 bg-gradient-to-br from-card to-cyan/5 p-10 shadow-[0_0_50px_-12px_rgba(192,252,248,0.3)] relative overflow-hidden">
+          <Card className="border border-cyan/30 bg-linear-to-br from-card to-cyan/5 p-10 shadow-[0_0_50px_-12px_rgba(192,252,248,0.3)] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan/10 rounded-full blur-3xl" />
             <div className="relative">
               <Badge className="mb-4 bg-green-500 text-white px-3 py-1 text-xs font-bold">LIVE NOW</Badge>
@@ -173,7 +281,7 @@ export default function Phase2Page() {
             </div>
           </Card>
 
-          <Card className="border border-accent/30 bg-gradient-to-br from-card to-accent/5 p-10 shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)] relative overflow-hidden">
+          <Card className="border border-accent/30 bg-linear-to-br from-card to-accent/5 p-10 shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
             <div className="relative">
               <Badge className="mb-4 bg-green-500 text-white px-3 py-1 text-xs font-bold">LIVE NOW</Badge>
@@ -196,8 +304,8 @@ export default function Phase2Page() {
         </div>
 
         {/* Countdown Banner */}
-        <Card className="mb-16 border border-accent/30 bg-gradient-to-r from-accent/10 via-cyan/10 to-accent/10 p-12 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-cyan/5" />
+        <Card className="mb-16 border border-accent/30 bg-linear-to-r from-accent/10 via-cyan/10 to-accent/10 p-12 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-linear-to-r from-accent/5 via-transparent to-cyan/5" />
           <div className="relative">
             <h3 className="text-5xl font-black tracking-tighter mb-4">
               Phase 2 Arrives <span className="text-cyan">Next Week</span>
@@ -206,27 +314,7 @@ export default function Phase2Page() {
               We're upgrading Aphyre AI with powerful new features to help you navigate the crypto markets with
               confidence. Get ready for advanced analytics, market sentiment tracking, and premium features.
             </p>
-            <div className="flex items-center justify-center gap-8 mb-8">
-              <div className="text-center">
-                <div className="text-6xl font-black tracking-tighter mb-2">0</div>
-                <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Days</div>
-              </div>
-              <div className="text-6xl font-black text-muted-foreground">:</div>
-              <div className="text-center">
-                <div className="text-6xl font-black tracking-tighter mb-2">0</div>
-                <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Hours</div>
-              </div>
-              <div className="text-6xl font-black text-muted-foreground">:</div>
-              <div className="text-center">
-                <div className="text-6xl font-black tracking-tighter mb-2">0</div>
-                <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Minutes</div>
-              </div>
-              <div className="text-6xl font-black text-muted-foreground">:</div>
-              <div className="text-center">
-                <div className="text-6xl font-black tracking-tighter mb-2">0</div>
-                <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Seconds</div>
-              </div>
-            </div>
+            <CountdownTimer />
             <Link href="/">
               <Button
                 size="lg"
@@ -329,7 +417,7 @@ export default function Phase2Page() {
         </div>
 
         {/* Newsletter Signup */}
-        <Card className="border border-accent/30 bg-gradient-to-br from-card to-accent/5 p-12 text-center shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)]">
+        <Card className="border border-accent/30 bg-linear-to-br from-card to-accent/5 p-12 text-center shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)]">
           <h3 className="text-4xl font-black tracking-tighter mb-4">Stay Updated</h3>
           <p className="text-lg text-muted-foreground font-medium mb-8 max-w-2xl mx-auto">
             Subscribe to our newsletter to get notified when Phase 2 launches and receive exclusive early access.
