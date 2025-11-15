@@ -1,13 +1,16 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { BarChart3, Check, X, Crown } from "lucide-react"
-import { useState } from "react"
+import { BarChart3, Check, X, Crown, CheckCircle } from "lucide-react"
+import { useState, useEffect } from "react"
 import { Sidebar } from "@/components/sidebar"
+import { ConfettiButton } from "@/components/confetti-button"
+import { TrialActivationCard } from "@/components/trial-activation-card"
 
 const pricingPlans = [
   {
@@ -44,7 +47,7 @@ const pricingPlans = [
       { name: "MCP server access", included: true },
       { name: "Priority support", included: true },
     ],
-    cta: "Subscribe Now",
+    cta: "Activate Your Trial",
     popular: true,
     color: "border-accent",
   },
@@ -63,7 +66,7 @@ const pricingPlans = [
       { name: "Early access to new features", included: true },
       { name: "Custom integrations", included: true },
     ],
-    cta: "Subscribe Now",
+    cta: "Activate Your Trial",
     popular: false,
     color: "border-cyan",
   },
@@ -93,6 +96,49 @@ const faqs = [
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "6months" | "yearly">("monthly")
+  const [showTrialCard, setShowTrialCard] = useState(false)
+  const [activatedPlan, setActivatedPlan] = useState<"Premium" | "Business" | null>(null)
+  const [activatedPlans, setActivatedPlans] = useState<Set<string>>(new Set())
+  const [isLoaded, setIsLoaded] = useState(false)
+  const router = useRouter()
+
+  // Load activation state from localStorage on component mount
+  useEffect(() => {
+    const savedActivations = localStorage.getItem('aphyre-activated-plans')
+    if (savedActivations) {
+      try {
+        const parsedActivations = JSON.parse(savedActivations)
+        setActivatedPlans(new Set(parsedActivations))
+      } catch (error) {
+        console.error('Error parsing saved activations:', error)
+      }
+    }
+    setIsLoaded(true)
+  }, [])
+
+  const saveActivationToStorage = (planName: string) => {
+    const updated = new Set(activatedPlans)
+    updated.add(planName)
+    setActivatedPlans(updated)
+    localStorage.setItem('aphyre-activated-plans', JSON.stringify([...updated]))
+  }
+
+  const handleTrialActivation = (planName: string) => {
+    if ((planName === "Premium" || planName === "Business") && !activatedPlans.has(planName)) {
+      saveActivationToStorage(planName)
+      setActivatedPlan(planName)
+      setShowTrialCard(true)
+      // Navigate to dashboard after a short delay
+      setTimeout(() => {
+        router.push("/")
+      }, 1500)
+    }
+  }
+
+  const handleCloseTrialCard = () => {
+    setShowTrialCard(false)
+    setActivatedPlan(null)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,9 +148,6 @@ export default function PricingPage() {
       <main className="ml-0 lg:ml-72 p-6 lg:p-12">
         {/* Header */}
         <div className="mb-16 text-center max-w-4xl mx-auto">
-          <Badge className="mb-6 bg-green-500/20 text-green-500 border-green-500/30 px-6 py-2 text-sm font-bold">
-            FREE TRIAL ACTIVE - Your trial ends in 24 hours
-          </Badge>
           <h2 className="mb-6 text-7xl font-black tracking-tighter leading-none text-balance">
             CHOOSE YOUR <span className="text-accent drop-shadow-[0_0_30px_rgba(216,105,142,0.5)]">PLAN</span>
           </h2>
@@ -163,7 +206,7 @@ export default function PricingPage() {
           {pricingPlans.map((plan, index) => (
             <Card
               key={index}
-              className={`p-8 ${plan.color} ${plan.popular ? "bg-gradient-to-br from-card to-accent/5 shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)] relative" : "bg-card"}`}
+              className={`p-8 ${plan.color} ${plan.popular ? "bg-linear-to-br from-card to-accent/5 shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)] relative" : "bg-card"}`}
             >
               {plan.popular && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground px-4 py-1 text-xs font-black">
@@ -179,26 +222,58 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              <Button
-                className={`w-full h-12 font-bold text-base mb-6 ${
-                  plan.popular
-                    ? "bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent"
-                    : plan.name === "Business"
-                      ? "bg-cyan text-cyan-foreground hover:bg-cyan/90"
-                      : ""
-                }`}
-                variant={plan.name === "Free" ? "outline" : "default"}
-              >
-                {plan.cta}
-              </Button>
+              {plan.name === "Free" ? (
+                <Button
+                  className="w-full h-12 font-bold text-base mb-6"
+                  variant="outline"
+                  onClick={() => router.push("/")}
+                >
+                  {plan.cta}
+                </Button>
+              ) : (
+                <div>
+                  {isLoaded && activatedPlans.has(plan.name) ? (
+                    <Button
+                      className={`w-full h-12 font-bold text-base mb-6 ${
+                        plan.popular
+                          ? "bg-accent/20 text-accent border-accent/50 hover:bg-accent/20"
+                          : "bg-cyan/20 text-cyan border-cyan/50 hover:bg-cyan/20"
+                      }`}
+                      variant="outline"
+                      disabled
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Activated
+                    </Button>
+                  ) : (
+                    <ConfettiButton
+                      className={`w-full h-12 font-bold text-base mb-6 ${
+                        plan.popular
+                          ? "bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent"
+                          : "bg-cyan text-cyan-foreground hover:bg-cyan/90"
+                      }`}
+                      variant="default"
+                      onClick={() => handleTrialActivation(plan.name)}
+                      disabled={!isLoaded}
+                      confettiOptions={{
+                        particleCount: 100,
+                        spread: 70,
+                        colors: plan.popular ? ['#d8698e', '#ff6b9d', '#c44569'] : ['#00f5ff', '#00d4ff', '#0099cc']
+                      }}
+                    >
+                      {plan.cta}
+                    </ConfettiButton>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-3">
                 {plan.features.map((feature, featureIndex) => (
                   <div key={featureIndex} className="flex items-center gap-3">
                     {feature.included ? (
-                      <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                      <Check className="h-5 w-5 text-green-500 shrink-0" />
                     ) : (
-                      <X className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <X className="h-5 w-5 text-muted-foreground shrink-0" />
                     )}
                     <span
                       className={`text-sm font-medium ${feature.included ? "text-foreground" : "text-muted-foreground"}`}
@@ -227,6 +302,15 @@ export default function PricingPage() {
           </div>
         </div>
       </main>
+
+      {/* Trial Activation Card */}
+      {showTrialCard && activatedPlan && (
+        <TrialActivationCard
+          isVisible={showTrialCard}
+          onClose={handleCloseTrialCard}
+          plan={activatedPlan}
+        />
+      )}
     </div>
   )
 }
