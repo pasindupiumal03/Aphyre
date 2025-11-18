@@ -14,6 +14,22 @@ export const metadata: Metadata = {
   title: "Aphyre - Crypto Dashboard & News",
   description: "Crypto dashboard and news aggregator for the latest updates in the cryptocurrency world.",
   generator: "Next.js",
+  icons: {
+    icon: [
+      {
+        url: "/favico.jpg",
+        sizes: "32x32",
+        type: "image/jpeg",
+      },
+      {
+        url: "/favico.jpg",
+        sizes: "16x16",
+        type: "image/jpeg",
+      },
+    ],
+    shortcut: "/favico.jpg",
+    apple: "/favico.jpg",
+  },
 }
 
 export default function RootLayout({
