@@ -253,7 +253,7 @@ export default function TermsOfServicePage() {
               </p>
               <div className="space-y-2">
                 <p className="text-base font-bold">Aphyre Legal Team</p>
-                <p className="text-base text-muted-foreground font-medium">Email: contact@Aphyre.io</p>              </div>
+                <p className="text-base text-muted-foreground font-medium">Email: hello@alphyre.io</p>              </div>
             </Card>
           </div>
 

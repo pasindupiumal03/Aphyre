@@ -198,7 +198,7 @@ export default function PrivacyPolicyPage() {
                 </li>
               </ul>
               <p className="text-base text-muted-foreground font-medium leading-relaxed mt-6">
-                To exercise these rights, please contact us at: contact@Aphyre.io
+                To exercise these rights, please contact us at: hello@alphyre.io
               </p>
             </Card>
 
@@ -245,7 +245,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <div className="space-y-2">
                 <p className="text-base font-bold">Aphyre Privacy Team</p>
-                <p className="text-base text-muted-foreground font-medium">Email: contact@Aphyre.io</p>
+                <p className="text-base text-muted-foreground font-medium">Email: hello@alphyre.io</p>
               </div>
             </Card>
           </div>
