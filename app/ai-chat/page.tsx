@@ -204,7 +204,7 @@ export default function AIChat() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-3">
-                      <h4 className="text-sm font-black uppercase tracking-widest text-accent">APHYRE AI</h4>
+                      <h4 className="text-sm font-black uppercase tracking-widest text-accent">Alphyre AI</h4>
                       <span className="text-xs text-muted-foreground font-medium">
                         {new Date().toLocaleTimeString('en-US', { 
                           hour: '2-digit', 
@@ -215,7 +215,7 @@ export default function AIChat() {
                     </div>
                     <div className="space-y-3 text-sm leading-relaxed">
                       <p className="font-medium">
-                        Welcome to Aphyre AI! 🚀
+                        Welcome to Alphyre AI! 🚀
                         <br />
                         I'm your advanced crypto trading assistant. I can analyze tokens on both Solana and Ethereum
                         networks. Here's what I can do:
@@ -304,7 +304,7 @@ export default function AIChat() {
                         <h4 className={`text-sm font-black uppercase tracking-widest ${
                           msg.isUser ? 'text-blue-500' : 'text-accent'
                         }`}>
-                          {msg.isUser ? 'YOU' : 'APHYRE AI'}
+                          {msg.isUser ? 'YOU' : 'Alphyre AI'}
                         </h4>
                         <span className="text-xs text-muted-foreground font-medium">{msg.timestamp}</span>
                       </div>
@@ -347,7 +347,7 @@ export default function AIChat() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-3">
-                        <h4 className="text-sm font-black uppercase tracking-widest text-accent">APHYRE AI</h4>
+                        <h4 className="text-sm font-black uppercase tracking-widest text-accent">Alphyre AI</h4>
                         <span className="text-xs text-muted-foreground font-medium">Typing...</span>
                       </div>
                       <div className="text-sm leading-relaxed font-medium">
@@ -389,7 +389,7 @@ export default function AIChat() {
             <Badge variant="secondary" className="font-bold text-xs">
               {isLoading ? 'Processing...' : 'Connected'}
             </Badge>
-            Aphyre AI may produce inaccurate information. Always verify important information. v2.1.0
+            Alphyre AI may produce inaccurate information. Always verify important information. v2.1.0
           </p>
         </div>
       </main>

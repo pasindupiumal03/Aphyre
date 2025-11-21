@@ -136,7 +136,7 @@ export default function ZKPrivacyPage() {
               </span>
             </h1>
             <p className="text-2xl text-muted-foreground leading-relaxed mb-12 max-w-3xl mx-auto text-pretty font-medium">
-              Aphyre ZK Privacy offers a seamless, private pay-to-use experience for Web3. Offline ZK-NFC payments,
+              Alphyre ZK Privacy offers a seamless, private pay-to-use experience for Web3. Offline ZK-NFC payments,
               Zcash secure transfers, and x402 layer supporting Solana Privacy.
             </p>
             <div className="flex justify-center">
@@ -215,14 +215,14 @@ export default function ZKPrivacyPage() {
                 <div className="h-16 w-16 rounded-2xl bg-accent/20 flex items-center justify-center mb-6 border border-accent/30">
                   <Shield className="h-8 w-8 text-accent" />
                 </div>
-                <h3 className="text-3xl font-black mb-3">Aphyre ZK</h3>
+                <h3 className="text-3xl font-black mb-3">Alphyre ZK</h3>
                 <p className="text-sm text-muted-foreground font-medium">Zero-knowledge privacy layer</p>
               </Card>
               <Card className="p-8 bg-card/50 backdrop-blur border-cyan/30 hover:border-cyan/60 transition-all hover:shadow-[0_0_50px_-12px_rgba(192,252,248,0.4)]">
                 <div className="h-16 w-16 rounded-2xl bg-cyan/20 flex items-center justify-center mb-6 border border-cyan/30">
                   <Coins className="h-8 w-8 text-cyan" />
                 </div>
-                <h3 className="text-3xl font-black mb-3">$Aphyre</h3>
+                <h3 className="text-3xl font-black mb-3">$Alphyre</h3>
                 <p className="text-sm text-muted-foreground font-medium">Shielded transactions</p>
               </Card>
               <Card className="p-8 bg-card/50 backdrop-blur border-border hover:border-accent/60 transition-all hover:shadow-[0_0_50px_-12px_rgba(216,105,142,0.4)]">
@@ -255,7 +255,7 @@ export default function ZKPrivacyPage() {
                 Privacy
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-                Aphyre ZK isn't just another payment protocol — it's a redefinition of what payment means in the era of
+                Alphyre ZK isn't just another payment protocol — it's a redefinition of what payment means in the era of
                 decentralization.
               </p>
             </div>
@@ -323,7 +323,7 @@ export default function ZKPrivacyPage() {
               <Badge className="mb-4 bg-cyan/20 text-cyan border-cyan/30 px-4 py-2 text-xs font-bold">TECHNOLOGY</Badge>
               <h2 className="text-6xl font-black tracking-tighter mb-4">The Power Behind ZK</h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                At the heart of Aphyre ZK lies a stack of revolutionary technologies, working together seamlessly.
+                At the heart of Alphyre ZK lies a stack of revolutionary technologies, working together seamlessly.
               </p>
             </div>
 
@@ -367,7 +367,7 @@ export default function ZKPrivacyPage() {
                   </div>
                 </div>
                 <p className="text-base text-muted-foreground leading-relaxed mb-6">
-                  One of Aphyre ZK's greatest innovations is the x402 Authentication Layer — the protocol that bridges
+                  One of Alphyre ZK's greatest innovations is the x402 Authentication Layer — the protocol that bridges
                   offline transactions, Solana Privacy. When devices disconnect, they securely synchronize and validate
                   payments through ZK attestation.
                 </p>
@@ -510,15 +510,15 @@ export default function ZKPrivacyPage() {
               <Badge className="mb-4 bg-cyan/20 text-cyan border-cyan/30 px-4 py-2 text-xs font-bold">SUPPORT</Badge>
               <h2 className="text-6xl font-black tracking-tighter mb-4">Frequently Asked Questions</h2>
               <p className="text-xl text-muted-foreground">
-                Everything you need to know about Aphyre ZK-NFC and how we protect layers.
+                Everything you need to know about Alphyre ZK-NFC and how we protect layers.
               </p>
             </div>
 
             <div className="space-y-4">
               {[
                 {
-                  q: "What is Aphyre ZK in simple terms?",
-                  a: "Aphyre ZK is a zero-knowledge privacy layer that enables anonymous, offline payments using NFC technology without revealing your identity or transaction details.",
+                  q: "What is Alphyre ZK in simple terms?",
+                  a: "Alphyre ZK is a zero-knowledge privacy layer that enables anonymous, offline payments using NFC technology without revealing your identity or transaction details.",
                 },
                 {
                   q: "How does the ZK-NFC offer a normal wallet taste?",
@@ -570,7 +570,7 @@ export default function ZKPrivacyPage() {
               True Privacy?
             </h2>
             <p className="text-xl text-muted-foreground mb-10">
-              Join thousands of users protecting their financial privacy with Aphyre ZK
+              Join thousands of users protecting their financial privacy with Alphyre ZK
             </p>
             <div className="flex gap-4 justify-center">
               <Button

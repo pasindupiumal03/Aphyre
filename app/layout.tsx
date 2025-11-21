@@ -11,7 +11,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Aphyre - Crypto Dashboard & News",
+  title: "Alphyre - Crypto Dashboard & News",
   description: "Crypto dashboard and news aggregator for the latest updates in the cryptocurrency world.",
   generator: "Next.js",
   icons: {

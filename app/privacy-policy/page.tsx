@@ -24,7 +24,7 @@ export default function PrivacyPolicyPage() {
             YOUR PRIVACY <span className="text-cyan drop-shadow-[0_0_30px_rgba(192,252,248,0.5)]">MATTERS</span>
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed text-pretty font-medium">
-            We're committed to protecting your privacy and ensuring you have a positive experience on Aphyre.
+            We're committed to protecting your privacy and ensuring you have a positive experience on Alphyre.
           </p>
           <p className="text-sm text-muted-foreground font-medium mt-4">
             Last Updated: November 15, 2024
@@ -39,10 +39,10 @@ export default function PrivacyPolicyPage() {
             <Card className="p-8 border-border bg-card">
               <h3 className="text-2xl font-black tracking-tight mb-4">1. Introduction</h3>
               <p className="text-base text-muted-foreground font-medium leading-relaxed mb-4">
-                Welcome to Aphyre ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about our privacy practices, please contact us.
+                Welcome to Alphyre ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about our privacy practices, please contact us.
               </p>
               <p className="text-base text-muted-foreground font-medium leading-relaxed">
-                Aphyre is a comprehensive crypto trading intelligence platform designed to provide traders with real-time market insights, news sentiment analysis, and blockchain analytics.
+                Alphyre is a comprehensive crypto trading intelligence platform designed to provide traders with real-time market insights, news sentiment analysis, and blockchain analytics.
               </p>
             </Card>
 
@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
                   <ul className="space-y-3 text-base text-muted-foreground font-medium">
                     <li className="flex gap-3">
                       <span className="text-cyan font-bold">•</span>
-                      <span><strong>Account Registration:</strong> When creating an Aphyre account, we collect your email address, username, and wallet address.</span>
+                      <span><strong>Account Registration:</strong> When creating an Alphyre account, we collect your email address, username, and wallet address.</span>
                     </li>
                     <li className="flex gap-3">
                       <span className="text-cyan font-bold">•</span>
@@ -148,7 +148,7 @@ export default function PrivacyPolicyPage() {
             <Card className="p-8 border-border bg-card">
               <h3 className="text-2xl font-black tracking-tight mb-4">4. Data Security</h3>
               <p className="text-base text-muted-foreground font-medium leading-relaxed mb-4">
-                Aphyre implements comprehensive security measures to protect your information:
+                Alphyre implements comprehensive security measures to protect your information:
               </p>
               <ul className="space-y-3 text-base text-muted-foreground font-medium">
                 <li className="flex gap-3">
@@ -206,7 +206,7 @@ export default function PrivacyPolicyPage() {
             <Card className="p-8 border-border bg-card">
               <h3 className="text-2xl font-black tracking-tight mb-4">6. Cookies & Tracking</h3>
               <p className="text-base text-muted-foreground font-medium leading-relaxed mb-4">
-                We use cookies and similar technologies to enhance your experience. You can control cookie preferences through your browser settings. Disabling cookies may limit some functionality of Aphyre.
+                We use cookies and similar technologies to enhance your experience. You can control cookie preferences through your browser settings. Disabling cookies may limit some functionality of Alphyre.
               </p>
               <div className="bg-secondary/20 border border-secondary/30 rounded-lg p-4">
                 <p className="text-sm text-muted-foreground font-medium">
@@ -244,7 +244,7 @@ export default function PrivacyPolicyPage() {
                 If you have questions about this Privacy Policy or our privacy practices, please contact us:
               </p>
               <div className="space-y-2">
-                <p className="text-base font-bold">Aphyre Privacy Team</p>
+                <p className="text-base font-bold">Alphyre Privacy Team</p>
                 <p className="text-base text-muted-foreground font-medium">Email: hello@alphyre.io</p>
               </div>
             </Card>
@@ -263,7 +263,7 @@ export default function PrivacyPolicyPage() {
                 </Link>
                 <Link href="/about">
                   <button className="w-full text-left text-base font-bold text-muted-foreground hover:text-accent transition-colors flex items-center justify-between group">
-                    <span>About Aphyre</span>
+                    <span>About Alphyre</span>
                     <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </Link>

@@ -183,7 +183,7 @@ export function Sidebar({ className }: SidebarProps) {
         {/* Scrollable Content Container */}
         <div className="flex-1 overflow-y-auto p-8 pb-0 scrollbar-hide">
           <div className="mb-12">
-            <h1 className="text-3xl font-black tracking-tighter">Aphyre</h1>
+            <h1 className="text-3xl font-black tracking-tighter">Alphyre</h1>
             <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mt-1">
               TRADING INTELLIGENCE
             </p>
