@@ -58,7 +58,7 @@ export function PaymentModal({ isOpen, onClose, onPaymentSuccess }: PaymentModal
       const result = await paymentService.createPaymentTransaction({
         userPublicKey: publicKey,
         amount: PAYMENT_AMOUNT,
-        memo: 'X402 Chat Payment - Aphyre'
+        memo: 'X402 Chat Payment - Alphyre'
       })
 
       if (!result.success || !result.transaction) {

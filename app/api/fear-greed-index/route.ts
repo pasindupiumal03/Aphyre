@@ -40,7 +40,7 @@ export async function GET(req: Request) {
     const response = await fetch(`${FEAR_GREED_API_URL}?limit=${limit}&format=json&date_format=world`, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'Aphyre-Trading-App/1.0',
+        'User-Agent': 'Alphyre-Trading-App/1.0',
       },
       next: { revalidate: 3600 }, // Cache for 1 hour
     });

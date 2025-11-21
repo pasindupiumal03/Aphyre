@@ -58,7 +58,7 @@ function CountdownTimer() {
   useEffect(() => {
     // Initialize countdown with 6 days, 23 hours, 59 minutes, 59 seconds from now
     const initializeCountdown = () => {
-      const savedEndTime = localStorage.getItem('aphyre-phase2-countdown-end')
+      const savedEndTime = localStorage.getItem('Alphyre-phase2-countdown-end')
       let endTime: number
 
       if (savedEndTime) {
@@ -67,7 +67,7 @@ function CountdownTimer() {
         // Set countdown to 6 days, 23 hours, 59 minutes, 59 seconds from now
         const now = new Date().getTime()
         endTime = now + (6 * 24 * 60 * 60 * 1000) + (23 * 60 * 60 * 1000) + (59 * 60 * 1000) + (59 * 1000)
-        localStorage.setItem('aphyre-phase2-countdown-end', endTime.toString())
+        localStorage.setItem('Alphyre-phase2-countdown-end', endTime.toString())
       }
 
       return endTime
@@ -90,7 +90,7 @@ function CountdownTimer() {
       } else {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
         // Optionally clear the stored end time when countdown reaches 0
-        localStorage.removeItem('aphyre-phase2-countdown-end')
+        localStorage.removeItem('Alphyre-phase2-countdown-end')
       }
     }
 
@@ -311,7 +311,7 @@ export default function Phase2Page() {
               Phase 2 Arrives <span className="text-cyan">Next Week</span>
             </h3>
             <p className="text-lg text-muted-foreground font-medium mb-8 max-w-3xl mx-auto">
-              We're upgrading Aphyre AI with powerful new features to help you navigate the crypto markets with
+              We're upgrading Alphyre AI with powerful new features to help you navigate the crypto markets with
               confidence. Get ready for advanced analytics, market sentiment tracking, and premium features.
             </p>
             <CountdownTimer />
@@ -394,7 +394,7 @@ export default function Phase2Page() {
               </div>
               <h4 className="text-2xl font-black tracking-tight mb-3">Premium Plans</h4>
               <p className="text-sm text-muted-foreground font-medium mb-4 leading-relaxed">
-                Paid tiers to support Aphyre's growth with exclusive features and priority access.
+                Paid tiers to support Alphyre's growth with exclusive features and priority access.
               </p>
               <Button size="sm" variant="outline" className="font-bold bg-transparent">
                 Coming Soon

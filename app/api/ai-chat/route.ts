@@ -596,7 +596,7 @@ const getGeneralAIResponse = async (message: string, conversationHistory: any[],
     const lowerMessage = message.toLowerCase();
     
     if (lowerMessage.includes('help') || lowerMessage.includes('what can you do')) {
-      return `🤖 Aphyre AI - Crypto Trading Assistant\n\nI can help you with:\n\n🔍 Real-Time Market Data:\n• Ask "What is the current price of Bitcoin?" for live BTC data\n• Ask "Show me the top gainers" for 24h top performers\n• Ask "What are the latest market trends?" for market overview\n• Ask "What are the top cryptocurrencies?" for market cap leaders\n\n📊 Token Analysis:\n• Send me any Solana or Ethereum token address\n• Search tokens by name or symbol\n• Get detailed token metrics and risk assessment\n\n💡 To get started: Try asking about Bitcoin price or paste a token address!\n\n*Note: Advanced AI analysis requires OpenAI API key configuration*`;
+      return `🤖 Alphyre AI - Crypto Trading Assistant\n\nI can help you with:\n\n🔍 Real-Time Market Data:\n• Ask "What is the current price of Bitcoin?" for live BTC data\n• Ask "Show me the top gainers" for 24h top performers\n• Ask "What are the latest market trends?" for market overview\n• Ask "What are the top cryptocurrencies?" for market cap leaders\n\n📊 Token Analysis:\n• Send me any Solana or Ethereum token address\n• Search tokens by name or symbol\n• Get detailed token metrics and risk assessment\n\n💡 To get started: Try asking about Bitcoin price or paste a token address!\n\n*Note: Advanced AI analysis requires OpenAI API key configuration*`;
     }
     
     if (lowerMessage.includes('price') && (lowerMessage.includes('bitcoin') || lowerMessage.includes('btc'))) {
@@ -607,7 +607,7 @@ const getGeneralAIResponse = async (message: string, conversationHistory: any[],
       return 'I can analyze any Solana or Ethereum token! Just paste the token address and I\'ll provide detailed analysis including price, market cap, liquidity, and risk assessment.';
     }
     
-    return `I'm Aphyre AI, your crypto trading assistant! 🚀\n\nI specialize in:\n• Real-time crypto price data\n• Token analysis for Solana & Ethereum\n• Market trends and insights\n\nTry asking me about Bitcoin price, market trends, or paste a token address for analysis!\n\n*Advanced conversational AI requires API key setup*`;
+    return `I'm Alphyre AI, your crypto trading assistant! 🚀\n\nI specialize in:\n• Real-time crypto price data\n• Token analysis for Solana & Ethereum\n• Market trends and insights\n\nTry asking me about Bitcoin price, market trends, or paste a token address for analysis!\n\n*Advanced conversational AI requires API key setup*`;
   }
   
   try {
@@ -798,7 +798,7 @@ export async function POST(request: NextRequest) {
     }
     
     // General conversation - Enhanced to suggest real-time capabilities
-    const enhancedSystemMessage = `You are Aphyre AI, a professional cryptocurrency trading assistant with access to real-time market data. You can provide:
+    const enhancedSystemMessage = `You are Alphyre AI, a professional cryptocurrency trading assistant with access to real-time market data. You can provide:
 
 REAL-TIME DATA CAPABILITIES:
 • Bitcoin/Ethereum/Solana current prices and 24h changes

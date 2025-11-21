@@ -58,7 +58,7 @@ export function TrialActivationCard({ isVisible, onClose, plan }: TrialActivatio
                   {plan} Trial Activated!
                 </h3>
                 <p className="text-sm text-muted-foreground font-medium">
-                  Welcome to Aphyre
+                  Welcome to Alphyre
                 </p>
               </div>
             </div>

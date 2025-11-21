@@ -33,7 +33,7 @@ const features = [
     icon: TrendingUp,
     title: "Advanced Twitter Tracker",
     description:
-      "Stay ahead of the curve with Aphyre's real-time Twitter monitoring, capturing market vibes, trending tokens, and emerging narratives as they unfold instantly.",
+      "Stay ahead of the curve with Alphyre's real-time Twitter monitoring, capturing market vibes, trending tokens, and emerging narratives as they unfold instantly.",
     color: "accent",
   },
   {
@@ -79,7 +79,7 @@ const protectionFeatures = [
 
 const solanaPlatforms = ["Pump.fun", "Bonk", "Launchcoin", "Raydium", "Meteora", "Moonshot"]
 
-const whyAphyreFeatures = [
+const whyAlphyreFeatures = [
   { title: "Secure Trading", description: "Trade confidently with comprehensive security" },
   { title: "Bundle Identification", description: "Identify bundled transactions" },
   { title: "Rug Checks", description: "Detect scams and avoid potential rug pulls" },
@@ -175,7 +175,7 @@ export default function AboutPage() {
         {/* Hero Section */}
         <div className="mb-16 max-w-4xl">
           <Badge className="mb-6 bg-accent/20 text-accent border-accent/30 px-6 py-2 text-sm font-bold">
-            ABOUT APHYRE
+            ABOUT Alphyre
           </Badge>
           <h2 className="mb-6 text-7xl font-black tracking-tighter leading-none text-balance">
             YOUR COMMUNITY-BUILT
@@ -187,14 +187,14 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* Discover Aphyre */}
+        {/* Discover Alphyre */}
         <Card className="mb-16 border border-accent/30 bg-gradient-to-br from-card to-accent/5 p-12 shadow-[0_0_50px_-12px_rgba(216,105,142,0.3)]">
-          <h3 className="text-4xl font-black tracking-tighter mb-6">Discover Aphyre</h3>
+          <h3 className="text-4xl font-black tracking-tighter mb-6">Discover Alphyre</h3>
           <p className="text-lg text-muted-foreground font-medium leading-relaxed mb-6">
             Your Community-Built Trading Shield
           </p>
           <p className="text-base text-muted-foreground font-medium leading-relaxed">
-            Welcome, Aphyre—where everyday traders come together in revolutionize crypto trading. Say goodbye to trading
+            Welcome, Alphyre—where everyday traders come together in revolutionize crypto trading. Say goodbye to trading
             stress and hello to peace of mind with our all-in-one, community-first platform that puts everything you
             need right at your fingertips.
           </p>
@@ -207,7 +207,7 @@ export default function AboutPage() {
               YOUR ULTIMATE SHIELD IN THE <span className="text-accent">CRYPTO UNIVERSE</span>
             </h3>
             <p className="text-lg text-muted-foreground font-medium">
-              Aphyre stands as your robust shield in the dynamic cryptocurrency world, offering unparalleled protection
+              Alphyre stands as your robust shield in the dynamic cryptocurrency world, offering unparalleled protection
               and empowerment through:
             </p>
           </div>
@@ -260,7 +260,7 @@ export default function AboutPage() {
               ADVANCED <span className="text-accent">PROTECTION FEATURES</span>
             </h3>
             <p className="text-lg text-muted-foreground font-medium">
-              Your security is our priority. Aphyre shields you with powerful tools to identify risks and avoid scams:
+              Your security is our priority. Alphyre shields you with powerful tools to identify risks and avoid scams:
             </p>
           </div>
 
@@ -289,15 +289,15 @@ export default function AboutPage() {
             </div>
             <div className="flex-1">
               <h3 className="text-4xl font-black tracking-tighter mb-4">
-                APHYRE'S MCP SERVER <span className="text-cyan">(VERSION 1.0.0)</span>
+                Alphyre'S MCP SERVER <span className="text-cyan">(VERSION 1.0.0)</span>
               </h3>
               <p className="text-lg text-muted-foreground font-medium mb-6">
-                Powered by the Model Context Protocol (MCP), Aphyre's server connects you to live crypto data and
+                Powered by the Model Context Protocol (MCP), Alphyre's server connects you to live crypto data and
                 analytics seamlessly. Access it at{" "}
                 <a href="#" className="text-cyan font-bold hover:underline">
                   https://mcpque.run/mcp
                 </a>{" "}
-                (only accessible on Aphyre website) and use the MCP inspector to explore and test resources and tools.
+                (only accessible on Alphyre website) and use the MCP inspector to explore and test resources and tools.
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -339,11 +339,11 @@ export default function AboutPage() {
           </div>
         </Card>
 
-        {/* Why Aphyre Stands Apart */}
+        {/* Why Alphyre Stands Apart */}
         <div className="mb-16">
           <div className="mb-8">
             <h3 className="text-4xl font-black tracking-tighter mb-4 text-center">
-              WHY APHYRE <span className="text-accent">STANDS APART</span>
+              WHY Alphyre <span className="text-accent">STANDS APART</span>
             </h3>
             <p className="text-lg text-muted-foreground font-medium text-center max-w-3xl mx-auto">
               We're not just another platform—we're your complete, our comprehensive solution combines MCP's sentiment
@@ -352,7 +352,7 @@ export default function AboutPage() {
           </div>
 
           <div className="grid grid-cols-4 gap-4">
-            {whyAphyreFeatures.map((feature, index) => (
+            {whyAlphyreFeatures.map((feature, index) => (
               <Card key={index} className="p-6 border-border bg-card text-center hover:border-accent/50 transition-all">
                 <h4 className="text-lg font-black tracking-tight mb-2">{feature.title}</h4>
                 <p className="text-xs text-muted-foreground font-medium">{feature.description}</p>
@@ -370,7 +370,7 @@ export default function AboutPage() {
             </h3>
             <p className="text-lg text-muted-foreground font-medium mb-8 max-w-3xl mx-auto">
               Whether you're a newbie or a pro, join us to trade smarter, safer, and together. Peace of mind is just a
-              click away—let's part of the Aphyre family today!
+              click away—let's part of the Alphyre family today!
             </p>
             <Button
               size="lg"

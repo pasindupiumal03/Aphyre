@@ -17,7 +17,7 @@ const pricingPlans = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Basic access to Aphyre AI",
+    description: "Basic access to Alphyre AI",
     features: [
       { name: "Dashboard access", included: true },
       { name: "5 AI chat requests per day", included: true },
@@ -36,7 +36,7 @@ const pricingPlans = [
     name: "Premium",
     price: "$60.00",
     period: "month",
-    description: "Full access to all Aphyre AI features",
+    description: "Full access to all Alphyre AI features",
     features: [
       { name: "Dashboard access", included: true },
       { name: "10 AI chat requests per day", included: true },
@@ -104,7 +104,7 @@ export default function PricingPage() {
 
   // Load activation state from localStorage on component mount
   useEffect(() => {
-    const savedActivations = localStorage.getItem('aphyre-activated-plans')
+    const savedActivations = localStorage.getItem('Alphyre-activated-plans')
     if (savedActivations) {
       try {
         const parsedActivations = JSON.parse(savedActivations)
@@ -120,7 +120,7 @@ export default function PricingPage() {
     const updated = new Set(activatedPlans)
     updated.add(planName)
     setActivatedPlans(updated)
-    localStorage.setItem('aphyre-activated-plans', JSON.stringify([...updated]))
+    localStorage.setItem('Alphyre-activated-plans', JSON.stringify([...updated]))
   }
 
   const handleTrialActivation = (planName: string) => {
@@ -152,7 +152,7 @@ export default function PricingPage() {
             CHOOSE YOUR <span className="text-accent drop-shadow-[0_0_30px_rgba(216,105,142,0.5)]">PLAN</span>
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed text-pretty font-medium mb-8">
-            Unlock the full potential of Aphyre AI with our premium plans. Get access to advanced
+            Unlock the full potential of Alphyre AI with our premium plans. Get access to advanced
             <br />
             features and higher usage limits.
           </p>
